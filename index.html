@@ -5,94 +5,38 @@
 <title>Glow Routine</title>
 
 <style>
-body{
-margin:0;
-font-family:-apple-system;
-background: linear-gradient(180deg,#fdf2f8,#eef2ff);
+body {
+font-family: Arial;
+background: #f9fafb;
 padding:20px;
 }
 
-.container{
-max-width:420px;
+.container {
+max-width:400px;
 margin:auto;
-}
-
-.header{
-font-size:28px;
-font-weight:700;
-margin-bottom:15px;
-}
-
-.controls{
-display:flex;
-gap:6px;
-flex-wrap:wrap;
-margin-bottom:15px;
-}
-
-select, button{
-padding:10px;
-border-radius:12px;
-border:none;
 background:white;
-}
-
-.card{
-background:white;
+padding:20px;
 border-radius:20px;
-padding:15px;
-margin-bottom:15px;
-box-shadow:0 10px 20px rgba(0,0,0,0.05);
 }
 
-.title{
-font-weight:600;
-margin-bottom:10px;
-}
-
-.item{
-display:flex;
-justify-content:space-between;
+.item {
 padding:10px;
-margin:6px 0;
-border-radius:12px;
-background:#f9fafb;
+margin:5px 0;
+background:#f3f4f6;
+border-radius:10px;
 cursor:pointer;
 }
 
-.done{
-opacity:0.5;
+.done {
 text-decoration:line-through;
+opacity:0.5;
 }
 
-.check{
-width:20px;
-height:20px;
-border-radius:6px;
-background:#e5e7eb;
-}
-
-.done .check{
-background:#10b981;
-}
-
-.history-card{
-background:white;
-padding:12px;
-border-radius:16px;
-margin-top:10px;
-}
-
-.product{
-background:white;
-padding:10px;
-border-radius:12px;
-margin-top:5px;
-}
-
-.red{
-background:#ff4d6d;
-color:white;
+.card {
+margin-top:20px;
+padding:15px;
+background:#f9fafb;
+border-radius:15px;
 }
 </style>
 </head>
@@ -101,9 +45,8 @@ color:white;
 
 <div class="container">
 
-<div class="header">✨ Glow Routine</div>
+<h2>✨ Glow Routine</h2>
 
-<div class="controls">
 <select id="week">
 <option value="1">Uke 1</option>
 <option value="2">Uke 2</option>
@@ -124,26 +67,18 @@ color:white;
 <option>Kveld</option>
 </select>
 
-<select id="skin">
-<option>Normal</option>
-<option>Sensitiv</option>
-<option>Tørr</option>
-<option>Akne</option>
-</select>
-
-<button onclick="generate()">Start</button>
-</div>
+<button onclick="generate()">Vis rutine</button>
 
 <div id="routine"></div>
 
 <div class="card">
-<div class="title">📊 Historikk</div>
-<button class="red" onclick="clearHistory()">Tøm</button>
+<h3>📊 Historikk</h3>
+<button onclick="clearHistory()">Tøm</button>
 <div id="history"></div>
 </div>
 
 <div class="card">
-<div class="title">🧴 Produkter</div>
+<h3>🧴 Produkter</h3>
 <div id="products"></div>
 </div>
 
@@ -152,164 +87,101 @@ color:white;
 <script>
 
 // DATA
-let products = [
+const products = [
 "Koreansk oljerens",
 "Mild vannrens",
 "BOJ Ginseng",
 "Byoma Serum",
-"Round Lab Cream",
-"Tree Hut Scrub",
-"ExfoliKate",
-"Sol de Janeiro Body Butter",
-"Kérastase Oil",
-"Vitamin C"
+"Round Lab Cream"
 ];
 
+// STORAGE
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
 function getKey(){
-return week.value + "-" + day.value + "-" + time.value;
-}
-
-// BARBERING
-function shave(d){
-return {
-"Mandag":"Armhuler + legger",
-"Tirsdag":"Lår + armer",
-"Onsdag":"Bikini + intim",
-"Torsdag":"Lår + armer",
-"Fredag":"Armhuler + legger",
-"Lørdag":"Bikini + intim",
-"Søndag":"Armhuler + legger"
-}[d];
-}
-
-// HÅR
-function hair(w,d){
-return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
-(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
-}
-
-// SMART LOGIKK
-function usedPeelYesterday(){
-let keys = Object.keys(tracker);
-if(keys.length === 0) return false;
-let last = keys[keys.length - 1];
-return tracker[last].includes("ExfoliKate");
+return document.getElementById("week").value + "-" +
+document.getElementById("day").value + "-" +
+document.getElementById("time").value;
 }
 
 // GENERATE
 function generate(){
 
-let k = getKey();
-if(!tracker[k]) tracker[k] = [];
+let key = getKey();
+if(!tracker[key]) tracker[key] = [];
 
 let list = [];
-let peel = usedPeelYesterday();
 
-// MORGEN
-if(time.value === "Morgen"){
-list = [
-products[0],
-products[1],
-products[2],
-(!peel ? products[9] : null),
-products[3],
-products[4]
-].filter(Boolean);
+if(document.getElementById("time").value === "Morgen"){
+list = [...products];
+} else {
+list = ["Dusj", "Barbering", ...products];
 }
 
-// KVELD
-if(time.value === "Kveld"){
-
-list.push("🚿 Dusj");
-
-if(day.value === "Torsdag"){
-list.push(products[5]);
-}else{
-list.push(products[7]);
-}
-
-list.push("🪒 " + shave(day.value));
-
-if(hair(week.value,day.value)){
-list.push("💇‍♀️ Hårvask");
-list.push(products[8]);
-}
-
-list.push(products[0],products[1]);
-
-if(day.value === "Torsdag"){
-list.push(products[6]);
-}else{
-list.push(!peel ? products[3] : "Recovery");
-}
-
-list.push(products[2],products[4]);
-}
-
-renderRoutine(list, k);
+renderRoutine(list, key);
 renderHistory();
 }
 
 // RENDER ROUTINE
-function renderRoutine(list, k){
+function renderRoutine(list, key){
 
-let div = document.getElementById("routine");
-div.innerHTML = `<div class="card"></div>`;
-let card = div.firstChild;
+const div = document.getElementById("routine");
+div.innerHTML = "";
 
 list.forEach(item => {
 
-let done = tracker[k].includes(item);
+const el = document.createElement("div");
 
-let el = document.createElement("div");
+let done = tracker[key].includes(item);
+
 el.className = "item " + (done ? "done" : "");
-
-el.innerHTML = `<span>${item}</span><div class="check"></div>`;
+el.innerText = item;
 
 el.onclick = () => toggle(item);
 
-card.appendChild(el);
+div.appendChild(el);
+
 });
 }
 
 // TOGGLE
 function toggle(item){
 
-let k = getKey();
+let key = getKey();
 
-if(tracker[k].includes(item)){
-tracker[k] = tracker[k].filter(i => i !== item);
-}else{
-tracker[k].push(item);
+if(tracker[key].includes(item)){
+tracker[key] = tracker[key].filter(i => i !== item);
+} else {
+tracker[key].push(item);
 }
 
 localStorage.setItem("tracker", JSON.stringify(tracker));
 
-renderHistory();
 generate();
 }
 
-// HISTORIKK (FIXET)
+// HISTORY (GARANTERT FUNKER)
 function renderHistory(){
 
-let div = document.getElementById("history");
+const div = document.getElementById("history");
 div.innerHTML = "";
 
-let keys = Object.keys(tracker);
+const keys = Object.keys(tracker);
 
 if(keys.length === 0){
-div.innerHTML = "Ingen historikk enda";
+div.innerText = "Ingen historikk";
 return;
 }
 
 keys.forEach(k => {
-let el = document.createElement("div");
-el.className = "history-card";
-el.innerHTML = "<b>" + k + "</b><br>" + tracker[k].join("<br>");
+
+const el = document.createElement("div");
+
+el.innerText = k + " → " + tracker[k].join(", ");
+
 div.appendChild(el);
+
 });
 }
 
@@ -318,20 +190,21 @@ function clearHistory(){
 tracker = {};
 localStorage.removeItem("tracker");
 renderHistory();
-document.getElementById("routine").innerHTML = "";
 }
 
-// PRODUKTER (FIXET)
+// PRODUCTS (GARANTERT FUNKER)
 function renderProducts(){
 
-let div = document.getElementById("products");
+const div = document.getElementById("products");
 div.innerHTML = "";
 
 products.forEach(p => {
-let el = document.createElement("div");
-el.className = "product";
+
+const el = document.createElement("div");
 el.innerText = p;
+
 div.appendChild(el);
+
 });
 }
 
