@@ -7,10 +7,8 @@
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .container { max-width:800px; margin:auto; background:white; padding:20px; border-radius:12px; }
-button { margin:5px; padding:10px; border:none; border-radius:8px; background:black; color:white; }
-select, input { padding:8px; margin:5px; }
-.done { text-decoration: line-through; color: gray; }
-.section { margin-top:15px; padding:10px; background:#fafafa; border-radius:10px; }
+.section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
+h3 { margin-bottom:5px; }
 </style>
 
 </head>
@@ -43,41 +41,47 @@ select, input { padding:8px; margin:5px; }
 
 <button onclick="generate()">Vis rutine</button>
 
-<h2>📋 Rutine</h2>
 <div id="routine"></div>
-
-<button onclick="showTravel()">✈️ Ferieliste</button>
 
 </div>
 
 <script>
 
 // PRODUKTER
-let products = {
+let p = {
 cleanser:"Koreansk oljerens",
 water:"Mild vannrens",
 toner:"BOJ Ginseng",
 mist:"d’Alba",
 vitc:"Medik8 C",
 serum:"Laneige Serum",
-nightserum:"Byoma Serum",
+night:"Byoma Serum",
 cream:"Round Lab Cream",
 daycream:"Paula’s Choice",
-oil:"Kerastase Oil",
+hairoil:"Kerastase Oil",
 body:"Delicia Body Butter",
 scrub:"Tree Hut Scrub",
 peel:"ExfoliKate"
 };
 
-// BARBERINGSPLAN
-function getShave(day){
-if(day==="Mandag") return "Armhuler + legger";
-if(day==="Tirsdag") return "Lår + armer";
-if(day==="Onsdag") return "Bikinilinje + intim";
-if(day==="Torsdag") return "Lår + armer";
-if(day==="Fredag") return "Armhuler + legger";
-if(day==="Lørdag") return "Bikinilinje + intim";
-if(day==="Søndag") return "Armhuler + legger";
+// BARBERING (TYDELIG!)
+function shave(day){
+return {
+"Mandag":"Armhuler + legger",
+"Tirsdag":"Lår + armer",
+"Onsdag":"Bikinilinje + intim",
+"Torsdag":"Lår + armer",
+"Fredag":"Armhuler + legger",
+"Lørdag":"Bikinilinje + intim",
+"Søndag":"Armhuler + legger"
+}[day];
+}
+
+// HÅRVASK
+function hair(week, day){
+if(week==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)) return true;
+if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) return true;
+return false;
 }
 
 // GENERATE
@@ -93,14 +97,14 @@ let html = "";
 if(time==="Morgen"){
 html += `
 <div class="section">
-🌞 Morgen:
-<br>Rens → ${products.cleanser}
-<br>Rens → ${products.water}
-<br>Toner → ${products.toner}
-<br>Mist → ${products.mist}
-<br>Vitamin C → ${products.vitc}
-<br>Serum → ${products.serum}
-<br>Krem → ${products.daycream}
+<h3>🌞 Morgen</h3>
+• ${p.cleanser}<br>
+• ${p.water}<br>
+• ${p.toner}<br>
+• ${p.mist}<br>
+• ${p.vitc}<br>
+• ${p.serum}<br>
+• ${p.daycream}
 </div>
 `;
 }
@@ -111,65 +115,46 @@ if(time==="Kveld"){
 // DUSJ
 html += `
 <div class="section">
-🚿 Dusj:
-<br>• Dusj + kroppsvask
+<h3>🚿 Dusj</h3>
+• Dusj + kroppsvask<br>
+${day==="Torsdag" ? "• Skrubb → "+p.scrub+"<br>• Body oil" : "• Body cream → "+p.body}
+</div>
 `;
 
-if(day==="Torsdag"){
-html += `<br>• Skrubb → ${products.scrub}`;
-html += `<br>• Body oil`;
-}else{
-html += `<br>• Body cream → ${products.body}`;
-}
-
-html += `<br><br>🪒 Barbering: ${getShave(day)}
+// BARBERING (EGEN BOKS)
+html += `
+<div class="section">
+<h3>🪒 Barbering</h3>
+• ${shave(day)}
 </div>
 `;
 
 // HÅR
-if(week==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)){
-html += `<div class="section">💇‍♀️ Hår: Hårvask + ${products.oil}</div>`;
-}
-
-if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)){
-html += `<div class="section">💇‍♀️ Hår: Hårvask + ${products.oil}</div>`;
+if(hair(week, day)){
+html += `
+<div class="section">
+<h3>💇‍♀️ Hår</h3>
+• Hårvask<br>
+• ${p.hairoil}
+</div>
+`;
 }
 
 // SKINCARE
 html += `
 <div class="section">
-🧼 Skincare:
-<br>Rens → ${products.cleanser}
-<br>Rens → ${products.water}
-`;
-
-if(day==="Torsdag" && week==1){
-html += `<br>Peel → ${products.peel}`;
-}
-
-html += `
-<br>Toner → ${products.toner}
-<br>Serum → ${products.nightserum}
-<br>Krem → ${products.cream}
+<h3>🧼 Skincare</h3>
+• ${p.cleanser}<br>
+• ${p.water}<br>
+${(day==="Torsdag" && week==1) ? "• "+p.peel+"<br>" : ""}
+• ${p.toner}<br>
+• ${p.night}<br>
+• ${p.cream}
 </div>
 `;
 }
 
 document.getElementById("routine").innerHTML = html;
-}
-
-// TRAVEL
-function showTravel(){
-document.getElementById("routine").innerHTML = `
-<div class="section">
-✈️ Ta med:
-<br>${products.cleanser}
-<br>${products.toner}
-<br>${products.vitc}
-<br>${products.serum}
-<br>${products.cream}
-</div>
-`;
 }
 
 </script>
