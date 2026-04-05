@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V7</title>
+<title>Rutine App V8</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:12px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
-.item { cursor:pointer; padding:5px; }
+.item { cursor:pointer; padding:6px; }
 .done { text-decoration: line-through; color:gray; }
 button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
 </style>
@@ -46,7 +46,11 @@ button { margin:5px; padding:8px; border:none; border-radius:8px; background:bla
 <div id="routine"></div>
 
 <h2>📊 Historikk</h2>
+<button onclick="clearHistory()">🧹 Tøm historikk</button>
 <div id="history"></div>
+
+<h2>📦 Alle produkter</h2>
+<ul id="products"></ul>
 
 </div>
 
@@ -65,10 +69,10 @@ let products = [
 "Kérastase Oil"
 ];
 
-// TRACKER STORAGE
+// TRACKER
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
-// KEY PER DAG
+// KEY
 function getKey(){
 let w = document.getElementById("week").value;
 let d = document.getElementById("day").value;
@@ -152,6 +156,7 @@ list.push(products[4]);
 
 render(list, key);
 renderHistory();
+renderProducts();
 }
 
 // RENDER
@@ -193,10 +198,34 @@ let div = document.getElementById("history");
 div.innerHTML = "";
 
 Object.keys(tracker).forEach(day => {
-div.innerHTML += `<div class="section"><b>${day}</b><br>${tracker[day].join("<br>")}</div>`;
+div.innerHTML += `
+<div class="section">
+<b>${day}</b><br>
+${tracker[day].join("<br>")}
+</div>`;
 });
 }
 
+// CLEAR HISTORY
+function clearHistory(){
+if(confirm("Slette all historikk?")){
+tracker = {};
+localStorage.removeItem("tracker");
+renderHistory();
+document.getElementById("routine").innerHTML="";
+}
+}
+
+// PRODUKTLISTE
+function renderProducts(){
+let ul = document.getElementById("products");
+ul.innerHTML = "";
+products.forEach(p=>{
+ul.innerHTML += `<li>${p}</li>`;
+});
+}
+
+renderProducts();
 renderHistory();
 
 </script>
