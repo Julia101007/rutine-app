@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V5</title>
+<title>Rutine App V6</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
@@ -11,14 +11,13 @@ body { font-family: Arial; background:#f6f6f6; padding:20px; }
 button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
 input { padding:8px; margin:5px; }
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>✨ Rutine App V5</h1>
+<h1>✨ Rutine App</h1>
 
 <select id="week">
 <option value="1">Uke 1</option>
@@ -48,14 +47,14 @@ input { padding:8px; margin:5px; }
 <ul id="productList"></ul>
 
 <input id="name" placeholder="Produktnavn">
-<input id="type" placeholder="Type (rens, toner...)">
+<input id="type" placeholder="Type (cleanser, toner...)">
 <button onclick="addProduct()">Legg til</button>
 
 </div>
 
 <script>
 
-// PRODUKTER MED TYPE (VIKTIG!)
+// PRODUKTER MED TYPE
 let products = JSON.parse(localStorage.getItem("products")) || [
 {name:"Koreansk oljerens", type:"cleanser"},
 {name:"Mild vannrens", type:"cleanser"},
@@ -69,12 +68,12 @@ let products = JSON.parse(localStorage.getItem("products")) || [
 {name:"Kérastase Oil", type:"hair"},
 {name:"Tree Hut Scrub", type:"scrub"},
 {name:"ExfoliKate", type:"peel"},
-{name:"Body Butter", type:"body"}
+{name:"Sol de Janeiro Body Butter", type:"body"}
 ];
 
-// HENT PRODUKT ETTER TYPE
+// HENT PRODUKT
 function get(type){
-return products.filter(p=>p.type===type).map(p=>p.name);
+return products.filter(p=>p.type===type).map(p=>p.name).join(", ") || "—";
 }
 
 // BARBERING
@@ -111,12 +110,12 @@ if(time==="Morgen"){
 html += `
 <div class="section">
 <h3>🌞 Morgen</h3>
-${get("cleanser").join("<br>")}
-<br>${get("toner")}
-<br>${get("mist")}
-<br>${get("vitc")}
-<br>${get("serum")}
-<br>${get("daycream")}
+• ${get("cleanser")}<br>
+• ${get("toner")}<br>
+• ${get("mist")}<br>
+• ${get("vitc")}<br>
+• ${get("serum")}<br>
+• ${get("daycream")}
 </div>
 `;
 }
@@ -124,14 +123,16 @@ ${get("cleanser").join("<br>")}
 // KVELD
 if(time==="Kveld"){
 
+// DUSJ
 html += `
 <div class="section">
 <h3>🚿 Dusj</h3>
 • Dusj + kroppsvask<br>
-${day==="Torsdag" ? "• "+get("scrub")+"<br>• Body oil" : "• "+get("body")}
+${day==="Torsdag" ? "• Skrubb → "+get("scrub")+"<br>• Body oil" : "• Body cream → "+get("body")}
 </div>
 `;
 
+// BARBERING
 html += `
 <div class="section">
 <h3>🪒 Barbering</h3>
@@ -139,6 +140,7 @@ html += `
 </div>
 `;
 
+// HÅR
 if(hair(week, day)){
 html += `
 <div class="section">
@@ -149,14 +151,15 @@ html += `
 `;
 }
 
+// SKINCARE
 html += `
 <div class="section">
 <h3>🧼 Skincare</h3>
-${get("cleanser").join("<br>")}
-<br>${(day==="Torsdag" && week==1) ? get("peel") : ""}
-<br>${get("toner")}
-<br>${get("night")}
-<br>${get("cream")}
+• ${get("cleanser")}<br>
+${(day==="Torsdag" && week==1) ? "• Peel → "+get("peel")+"<br>" : ""}
+• ${get("toner")}<br>
+• ${get("night")}<br>
+• ${get("cream")}
 </div>
 `;
 }
@@ -174,21 +177,20 @@ localStorage.setItem("products", JSON.stringify(products));
 render();
 }
 
-// RENDER
-function render(){
-let list = document.getElementById("productList");
-list.innerHTML = "";
-
-products.forEach((p,i)=>{
-list.innerHTML += `<li>${p.name} (${p.type}) <button onclick="remove(${i})">X</button></li>`;
-});
-}
-
 // REMOVE
 function remove(i){
 products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
 render();
+}
+
+// RENDER
+function render(){
+let list = document.getElementById("productList");
+list.innerHTML = "";
+products.forEach((p,i)=>{
+list.innerHTML += `<li>${p.name} (${p.type}) <button onclick="remove(${i})">X</button></li>`;
+});
 }
 
 render();
