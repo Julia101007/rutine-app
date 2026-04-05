@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V10</title>
+<title>Rutine App V11</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
@@ -10,7 +10,9 @@ body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
 .item { cursor:pointer; padding:6px; }
 .done { text-decoration: line-through; color:gray; }
-button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
+button { margin:5px; padding:8px; border:none; border-radius:8px; }
+.black { background:black; color:white; }
+.red { background:#e74c3c; color:white; }
 </style>
 
 </head>
@@ -41,7 +43,6 @@ button { margin:5px; padding:8px; border:none; border-radius:8px; background:bla
 <option>Kveld</option>
 </select>
 
-<!-- HUD STATUS -->
 <h3>Hudstatus</h3>
 <select id="skin">
 <option>Normal</option>
@@ -50,35 +51,42 @@ button { margin:5px; padding:8px; border:none; border-radius:8px; background:bla
 <option>Akne</option>
 </select>
 
-<button onclick="generate()">Vis smart rutine</button>
+<button class="black" onclick="generate()">Vis rutine</button>
 
 <div id="routine"></div>
+
+<h2>📊 Historikk</h2>
+<button class="red" onclick="clearHistory()">🧹 Tøm historikk</button>
+<div id="history"></div>
+
+<h2>📦 Alle produkter</h2>
+<ul id="products"></ul>
 
 </div>
 
 <script>
 
 // PRODUKTER
-let p = {
-cleanser:"Koreansk oljerens",
-water:"Mild vannrens",
-toner:"BOJ Ginseng",
-vitc:"Medik8 C",
-serum:"Laneige Serum",
-night:"Byoma Serum",
-cream:"Round Lab Cream",
-scrub:"Tree Hut Scrub",
-peel:"ExfoliKate",
-body:"Sol de Janeiro Body Butter"
-};
+let products = [
+"Koreansk oljerens",
+"Mild vannrens",
+"BOJ Ginseng",
+"Byoma Serum",
+"Round Lab Cream",
+"Tree Hut Scrub",
+"ExfoliKate",
+"Sol de Janeiro Body Butter",
+"Kérastase Oil"
+];
 
-// HISTORIKK
-let history = JSON.parse(localStorage.getItem("history")) || {};
+// TRACKER
+let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
-function key(){
+function getKey(){
 return document.getElementById("week").value + "-" +
-document.getElementById("day").value;
+document.getElementById("day").value + "-" +
+document.getElementById("time").value;
 }
 
 // BARBERING
@@ -94,78 +102,160 @@ return {
 }[day];
 }
 
-// CHECK YESTERDAY
-function yesterdayUsedPeel(){
-let keys = Object.keys(history);
-let last = keys[keys.length-1];
+// HÅRVASK
+function hair(week, day){
+if(week==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)) return true;
+if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) return true;
+return false;
+}
+
+// SJEKK I GÅR
+function usedPeelYesterday(){
+let keys = Object.keys(tracker);
+let last = keys[keys.length - 1];
 if(!last) return false;
-return history[last].includes("Peel");
+return tracker[last].includes("ExfoliKate");
 }
 
 // GENERATE
 function generate(){
 
+let week = document.getElementById("week").value;
 let day = document.getElementById("day").value;
 let time = document.getElementById("time").value;
 let skin = document.getElementById("skin").value;
 
-let html = "";
-let usedPeel = yesterdayUsedPeel();
+let key = getKey();
+if(!tracker[key]) tracker[key] = [];
 
-html += `<div class="section"><h3>🧠 Smart logikk aktiv</h3>`;
+let list = [];
+let usedPeel = usedPeelYesterday();
 
 // MORGEN
 if(time==="Morgen"){
-
-html += `• ${p.cleanser}<br>• ${p.toner}<br>`;
+list.push(products[0]);
+list.push(products[1]);
+list.push(products[2]);
 
 if(!usedPeel && skin !== "Sensitiv"){
-html += `• ${p.vitc}<br>`;
+list.push("Vitamin C");
 }
 
-html += `• ${p.serum}<br>• ${p.cream}`;
+list.push(products[3]);
+list.push(products[4]);
 }
 
 // KVELD
 if(time==="Kveld"){
 
-html += `<br><br>🚿 Dusj<br>• Dusj + kroppsvask`;
+list.push("Dusj + kroppsvask");
 
 if(day==="Torsdag"){
-html += `<br>• ${p.scrub}`;
+list.push(products[5]);
+list.push("Body oil");
+}else{
+list.push(products[7]);
 }
 
-// BARBERING
-html += `<br><br>🪒 Barbering<br>• ${shave(day)}`;
+list.push("Barbering: " + shave(day));
 
-// SKINCARE
-html += `<br><br>🧼 Skincare<br>`;
-html += `• ${p.cleanser}<br>• ${p.toner}<br>`;
+if(hair(week, day)){
+list.push("Hårvask");
+list.push(products[8]);
+}
 
-// PEEL
+list.push(products[0]);
+list.push(products[1]);
+
 if(day==="Torsdag"){
-html += `• ${p.peel}<br>`;
-history[key()] = ["Peel"];
+list.push(products[6]);
 }else{
-
-// SMART LOGIKK
 if(!usedPeel && skin !== "Sensitiv"){
-html += `• ${p.night}<br>`;
+list.push(products[3]);
 }else{
-html += `• (Recovery mode – ingen aktive)<br>`;
+list.push("Recovery (ingen aktive)");
+}
 }
 
+list.push(products[2]);
+list.push(products[4]);
 }
 
-html += `• ${p.cream}`;
+render(list, key);
+renderHistory();
+renderProducts();
 }
 
-html += `</div>`;
+// RENDER CHECKLIST
+function render(list, key){
+let div = document.getElementById("routine");
+div.innerHTML = "";
 
-document.getElementById("routine").innerHTML = html;
+list.forEach(item => {
 
-localStorage.setItem("history", JSON.stringify(history));
+let done = tracker[key].includes(item);
+
+div.innerHTML += `
+<div class="item ${done?'done':''}" onclick="toggle('${item}')">
+✔ ${item}
+</div>
+`;
+});
 }
+
+// TOGGLE
+function toggle(item){
+let key = getKey();
+
+if(!tracker[key]) tracker[key] = [];
+
+if(tracker[key].includes(item)){
+tracker[key] = tracker[key].filter(i => i !== item);
+}else{
+tracker[key].push(item);
+}
+
+localStorage.setItem("tracker", JSON.stringify(tracker));
+generate();
+}
+
+// HISTORIKK
+function renderHistory(){
+let div = document.getElementById("history");
+div.innerHTML = "";
+
+Object.keys(tracker).forEach(day => {
+div.innerHTML += `
+<div class="section">
+<b>${day}</b><br>
+${tracker[day].join("<br>")}
+</div>`;
+});
+}
+
+// TØM HISTORIKK
+function clearHistory(){
+if(confirm("Slette all historikk?")){
+tracker = {};
+localStorage.removeItem("tracker");
+renderHistory();
+document.getElementById("routine").innerHTML = "";
+}
+}
+
+// PRODUKTER
+function renderProducts(){
+let ul = document.getElementById("products");
+ul.innerHTML = "";
+
+products.forEach(p=>{
+ul.innerHTML += `<li>${p}</li>`;
+});
+}
+
+// INIT
+renderProducts();
+renderHistory();
 
 </script>
 
