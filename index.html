@@ -2,87 +2,107 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Beauty Routine App</title>
+<title>Glow Routine</title>
 
 <style>
 
 body {
-font-family: -apple-system, BlinkMacSystemFont;
-background: linear-gradient(to bottom, #fdf2f8, #f8fafc);
-padding:20px;
 margin:0;
+font-family:-apple-system, BlinkMacSystemFont;
+background: linear-gradient(135deg,#fde2e4,#e0f2fe);
+padding:20px;
 }
 
 .container {
-max-width:900px;
+max-width:420px;
 margin:auto;
-background:white;
+}
+
+/* HEADER */
+.header {
+background: rgba(255,255,255,0.6);
+backdrop-filter: blur(20px);
 padding:20px;
-border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
+border-radius:24px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
 }
 
 h1 {
-font-size:28px;
-margin-bottom:10px;
+margin:0;
+font-size:26px;
+}
+
+/* CONTROLS */
+.controls {
+margin-top:15px;
+display:flex;
+flex-wrap:wrap;
+gap:8px;
 }
 
 select, button {
 padding:10px;
-border-radius:12px;
+border-radius:14px;
 border:none;
-margin:5px;
+background:white;
 }
 
-button {
-background:black;
-color:white;
-font-weight:600;
-}
-
-.section {
+/* ROUTINE CARD */
+.card {
 margin-top:20px;
-padding:15px;
-border-radius:16px;
-background:#fafafa;
-box-shadow:0 4px 10px rgba(0,0,0,0.05);
+padding:18px;
+border-radius:22px;
+background: rgba(255,255,255,0.7);
+backdrop-filter: blur(15px);
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
 }
 
+/* ITEM */
 .item {
-padding:10px;
+padding:12px;
 margin:6px 0;
-border-radius:12px;
+border-radius:14px;
 background:white;
 cursor:pointer;
 transition:0.2s;
 }
 
-.item:hover {
-transform:scale(1.02);
+.item:active {
+transform:scale(0.96);
 }
 
 .done {
+opacity:0.5;
 text-decoration:line-through;
-color:gray;
-background:#f1f5f9;
+}
+
+/* HISTORY */
+.history {
+margin-top:20px;
 }
 
 .history-card {
-margin-top:10px;
-padding:10px;
-background:#fff;
-border-radius:12px;
+background:white;
+padding:12px;
+border-radius:14px;
+margin-bottom:10px;
+}
+
+/* PRODUCTS */
+.products {
+margin-top:20px;
 }
 
 .product {
-padding:8px;
-background:#fff;
-border-radius:10px;
+background:white;
+padding:10px;
+border-radius:12px;
 margin:5px 0;
 }
 
 .red {
-background:#ef4444;
+background:#ff4d6d;
+color:white;
 }
 
 </style>
@@ -93,8 +113,10 @@ background:#ef4444;
 
 <div class="container">
 
-<h1>💖 Beauty Routine</h1>
+<div class="header">
+<h1>✨ Glow Routine</h1>
 
+<div class="controls">
 <select id="week">
 <option value="1">Uke 1</option>
 <option value="2">Uke 2</option>
@@ -115,18 +137,29 @@ background:#ef4444;
 <option>Kveld</option>
 </select>
 
-<br>
+<select id="skin">
+<option>Normal</option>
+<option>Sensitiv</option>
+<option>Tørr</option>
+<option>Akne</option>
+</select>
 
-<button onclick="generate()">✨ Vis rutine</button>
+<button onclick="generate()">Start</button>
+</div>
+</div>
 
 <div id="routine"></div>
 
-<h2>📊 Historikk</h2>
-<button class="red" onclick="clearHistory()">Tøm historikk</button>
+<div class="history">
+<h3>📊 Historikk</h3>
+<button class="red" onclick="clearHistory()">Tøm</button>
 <div id="history"></div>
+</div>
 
-<h2>🧴 Produkter</h2>
+<div class="products">
+<h3>🧴 Produkter</h3>
 <div id="products"></div>
+</div>
 
 </div>
 
@@ -143,90 +176,79 @@ let products = [
 "ExfoliKate",
 "Sol de Janeiro Body Butter",
 "Kérastase Oil",
-"Medik8 Vitamin C"
+"Vitamin C"
 ];
 
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
 function key(){
-return document.getElementById("week").value + "-" +
-document.getElementById("day").value + "-" +
-document.getElementById("time").value;
+return week.value+"-"+day.value+"-"+time.value;
 }
 
-// BARBERING
-function shave(day){
+// BARBER
+function shave(d){
 return {
 "Mandag":"Armhuler + legger",
 "Tirsdag":"Lår + armer",
-"Onsdag":"Bikinilinje + intim",
+"Onsdag":"Bikini + intim",
 "Torsdag":"Lår + armer",
 "Fredag":"Armhuler + legger",
-"Lørdag":"Bikinilinje + intim",
+"Lørdag":"Bikini + intim",
 "Søndag":"Armhuler + legger"
-}[day];
+}[d];
 }
 
-// HÅR
+// HAIR
 function hair(w,d){
-if(w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) return true;
-if(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d)) return true;
-return false;
+return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
+(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
 }
 
 // SMART
-function usedPeel(){
+function peelYesterday(){
 let keys = Object.keys(tracker);
 if(keys.length===0) return false;
-let last = keys[keys.length-1];
-return tracker[last].includes("ExfoliKate");
+return tracker[keys[keys.length-1]].includes("ExfoliKate");
 }
 
 // GENERATE
 function generate(){
 
-let w = document.getElementById("week").value;
-let d = document.getElementById("day").value;
-let t = document.getElementById("time").value;
 let k = key();
-
 if(!tracker[k]) tracker[k]=[];
 
-let list = [];
-let peel = usedPeel();
+let list=[];
+let peel = peelYesterday();
 
-if(t==="Morgen"){
-list = [
-products[0],
-products[1],
-products[2],
-(!peel ? products[9]:null),
-products[3],
-products[4]
-].filter(Boolean);
+// MORGEN
+if(time.value==="Morgen"){
+list=[products[0],products[1],products[2],
+(!peel?products[9]:null),
+products[3],products[4]].filter(Boolean);
 }
 
-if(t==="Kveld"){
+// KVELD
+if(time.value==="Kveld"){
 
 list.push("🚿 Dusj");
 
-if(d==="Torsdag"){
+if(day.value==="Torsdag"){
 list.push(products[5]);
 }else{
 list.push(products[7]);
 }
 
-list.push("🪒 "+shave(d));
+list.push("🪒 "+shave(day.value));
 
-if(hair(w,d)){
+if(hair(week.value,day.value)){
 list.push("💇‍♀️ Hårvask");
 list.push(products[8]);
 }
 
 list.push(products[0],products[1]);
 
-if(d==="Torsdag"){
+if(day.value==="Torsdag"){
 list.push(products[6]);
 }else{
 list.push(!peel ? products[3] : "Recovery");
@@ -242,68 +264,57 @@ renderProducts();
 
 // RENDER
 function render(list,k){
-let div = document.getElementById("routine");
-div.innerHTML="";
+let div=routine;
+div.innerHTML=`<div class="card"></div>`;
+let card=div.firstChild;
 
 list.forEach(item=>{
-let done = tracker[k].includes(item);
+let done=tracker[k].includes(item);
 
-let el = document.createElement("div");
+let el=document.createElement("div");
 el.className="item "+(done?"done":"");
-el.innerText="✔ "+item;
+el.innerText=item;
 
-el.onclick=()=>toggle(item);
-
-div.appendChild(el);
-});
-}
-
-// TOGGLE
-function toggle(item){
-let k = key();
-
+el.onclick=()=>{
 if(tracker[k].includes(item)){
 tracker[k]=tracker[k].filter(i=>i!==item);
 }else{
 tracker[k].push(item);
 }
-
 localStorage.setItem("tracker",JSON.stringify(tracker));
 generate();
+};
+
+card.appendChild(el);
+});
 }
 
 // HISTORY
 function renderHistory(){
-let div=document.getElementById("history");
-div.innerHTML="";
-
+history.innerHTML="";
 for(let k in tracker){
-let card=document.createElement("div");
-card.className="history-card";
-card.innerHTML="<b>"+k+"</b><br>"+tracker[k].join("<br>");
-div.appendChild(card);
+let el=document.createElement("div");
+el.className="history-card";
+el.innerHTML="<b>"+k+"</b><br>"+tracker[k].join("<br>");
+history.appendChild(el);
 }
 }
 
 // CLEAR
 function clearHistory(){
-if(confirm("Slette historikk?")){
 tracker={};
 localStorage.removeItem("tracker");
 renderHistory();
 }
-}
 
 // PRODUCTS
 function renderProducts(){
-let div=document.getElementById("products");
-div.innerHTML="";
-
+productsDiv.innerHTML="";
 products.forEach(p=>{
 let el=document.createElement("div");
 el.className="product";
 el.innerText=p;
-div.appendChild(el);
+productsDiv.appendChild(el);
 });
 }
 
