@@ -1,8 +1,8 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V8</title>
+<title>Rutine App V9</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
@@ -10,7 +10,9 @@ body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
 .item { cursor:pointer; padding:6px; }
 .done { text-decoration: line-through; color:gray; }
-button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
+button { margin:5px; padding:8px; border:none; border-radius:8px; }
+.black { background:black; color:white; }
+.red { background:#e74c3c; color:white; }
 </style>
 
 </head>
@@ -41,16 +43,20 @@ button { margin:5px; padding:8px; border:none; border-radius:8px; background:bla
 <option>Kveld</option>
 </select>
 
-<button onclick="generate()">Vis rutine</button>
+<br>
+
+<button class="black" onclick="generate()">Vis rutine</button>
 
 <div id="routine"></div>
 
+<!-- HISTORIKK -->
 <h2>📊 Historikk</h2>
-<button onclick="clearHistory()">🧹 Tøm historikk</button>
+<button class="red" onclick="clearHistory()">🧹 Tøm ALL historikk</button>
 <div id="history"></div>
 
+<!-- PRODUKTER -->
 <h2>📦 Alle produkter</h2>
-<ul id="products"></ul>
+<div id="productSection"></div>
 
 </div>
 
@@ -159,7 +165,7 @@ renderHistory();
 renderProducts();
 }
 
-// RENDER
+// RENDER CHECKLIST
 function render(list, key){
 let div = document.getElementById("routine");
 div.innerHTML = "";
@@ -192,10 +198,15 @@ localStorage.setItem("tracker", JSON.stringify(tracker));
 generate();
 }
 
-// HISTORY
+// HISTORIKK
 function renderHistory(){
 let div = document.getElementById("history");
 div.innerHTML = "";
+
+if(Object.keys(tracker).length === 0){
+div.innerHTML = "<i>Ingen historikk enda</i>";
+return;
+}
 
 Object.keys(tracker).forEach(day => {
 div.innerHTML += `
@@ -206,25 +217,31 @@ ${tracker[day].join("<br>")}
 });
 }
 
-// CLEAR HISTORY
+// TØM HISTORIKK
 function clearHistory(){
-if(confirm("Slette all historikk?")){
+let confirmDelete = confirm("Er du sikker på at du vil slette ALL historikk?");
+if(confirmDelete){
 tracker = {};
 localStorage.removeItem("tracker");
 renderHistory();
-document.getElementById("routine").innerHTML="";
+document.getElementById("routine").innerHTML = "";
 }
 }
 
-// PRODUKTLISTE
+// PRODUKTER
 function renderProducts(){
-let ul = document.getElementById("products");
-ul.innerHTML = "";
+let div = document.getElementById("productSection");
+
+div.innerHTML = "<ul>";
+
 products.forEach(p=>{
-ul.innerHTML += `<li>${p}</li>`;
+div.innerHTML += `<li>${p}</li>`;
 });
+
+div.innerHTML += "</ul>";
 }
 
+// INIT
 renderProducts();
 renderHistory();
 
