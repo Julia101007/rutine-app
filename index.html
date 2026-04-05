@@ -6,101 +6,102 @@
 
 <style>
 
-body {
+body{
 margin:0;
-font-family:-apple-system, BlinkMacSystemFont;
-background: linear-gradient(135deg,#fde2e4,#e0f2fe);
+font-family:-apple-system;
+background: linear-gradient(180deg,#fdf2f8,#eef2ff);
 padding:20px;
 }
 
-.container {
+/* CONTAINER */
+.container{
 max-width:420px;
 margin:auto;
 }
 
 /* HEADER */
-.header {
-background: rgba(255,255,255,0.6);
-backdrop-filter: blur(20px);
-padding:20px;
-border-radius:24px;
-box-shadow:0 10px 30px rgba(0,0,0,0.1);
-}
-
-h1 {
-margin:0;
-font-size:26px;
+.header{
+font-size:28px;
+font-weight:700;
+margin-bottom:15px;
 }
 
 /* CONTROLS */
-.controls {
-margin-top:15px;
+.controls{
 display:flex;
+gap:6px;
 flex-wrap:wrap;
-gap:8px;
+margin-bottom:15px;
 }
 
-select, button {
+select, button{
 padding:10px;
-border-radius:14px;
+border-radius:12px;
 border:none;
 background:white;
 }
 
-/* ROUTINE CARD */
-.card {
-margin-top:20px;
-padding:18px;
-border-radius:22px;
-background: rgba(255,255,255,0.7);
-backdrop-filter: blur(15px);
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
+/* CARD */
+.card{
+background:white;
+border-radius:20px;
+padding:15px;
+margin-bottom:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.05);
+}
+
+/* SECTION TITLE */
+.title{
+font-weight:600;
+margin-bottom:10px;
 }
 
 /* ITEM */
-.item {
-padding:12px;
+.item{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:10px;
 margin:6px 0;
-border-radius:14px;
-background:white;
+border-radius:12px;
+background:#f9fafb;
 cursor:pointer;
-transition:0.2s;
 }
 
-.item:active {
-transform:scale(0.96);
+.check{
+width:20px;
+height:20px;
+border-radius:6px;
+background:#e5e7eb;
 }
 
-.done {
+.done .check{
+background:#10b981;
+}
+
+.done{
 opacity:0.5;
 text-decoration:line-through;
 }
 
 /* HISTORY */
-.history {
-margin-top:20px;
-}
-
-.history-card {
+.history-card{
 background:white;
 padding:12px;
-border-radius:14px;
-margin-bottom:10px;
+border-radius:16px;
+margin-top:10px;
 }
 
-/* PRODUCTS */
-.products {
-margin-top:20px;
-}
-
-.product {
+/* PRODUCT */
+.product{
 background:white;
 padding:10px;
 border-radius:12px;
-margin:5px 0;
+margin-top:5px;
 }
 
-.red {
+/* BUTTON */
+.red{
 background:#ff4d6d;
 color:white;
 }
@@ -113,8 +114,7 @@ color:white;
 
 <div class="container">
 
-<div class="header">
-<h1>✨ Glow Routine</h1>
+<div class="header">✨ Glow Routine</div>
 
 <div class="controls">
 <select id="week">
@@ -146,18 +146,17 @@ color:white;
 
 <button onclick="generate()">Start</button>
 </div>
-</div>
 
 <div id="routine"></div>
 
-<div class="history">
-<h3>📊 Historikk</h3>
+<div class="card">
+<div class="title">📊 Historikk</div>
 <button class="red" onclick="clearHistory()">Tøm</button>
 <div id="history"></div>
 </div>
 
-<div class="products">
-<h3>🧴 Produkter</h3>
+<div class="card">
+<div class="title">🧴 Produkter</div>
 <div id="products"></div>
 </div>
 
@@ -165,8 +164,7 @@ color:white;
 
 <script>
 
-// DATA
-let products = [
+let products=[
 "Koreansk oljerens",
 "Mild vannrens",
 "BOJ Ginseng",
@@ -179,14 +177,12 @@ let products = [
 "Vitamin C"
 ];
 
-let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
+let tracker=JSON.parse(localStorage.getItem("tracker"))||{};
 
-// KEY
 function key(){
 return week.value+"-"+day.value+"-"+time.value;
 }
 
-// BARBER
 function shave(d){
 return {
 "Mandag":"Armhuler + legger",
@@ -199,27 +195,24 @@ return {
 }[d];
 }
 
-// HAIR
 function hair(w,d){
 return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
 (w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
 }
 
-// SMART
 function peelYesterday(){
-let keys = Object.keys(tracker);
-if(keys.length===0) return false;
-return tracker[keys[keys.length-1]].includes("ExfoliKate");
+let k=Object.keys(tracker);
+if(k.length===0)return false;
+return tracker[k[k.length-1]].includes("ExfoliKate");
 }
 
-// GENERATE
 function generate(){
 
-let k = key();
-if(!tracker[k]) tracker[k]=[];
+let k=key();
+if(!tracker[k])tracker[k]=[];
 
 let list=[];
-let peel = peelYesterday();
+let peel=peelYesterday();
 
 // MORGEN
 if(time.value==="Morgen"){
@@ -231,7 +224,7 @@ products[3],products[4]].filter(Boolean);
 // KVELD
 if(time.value==="Kveld"){
 
-list.push("🚿 Dusj");
+list.push("Dusj");
 
 if(day.value==="Torsdag"){
 list.push(products[5]);
@@ -239,10 +232,10 @@ list.push(products[5]);
 list.push(products[7]);
 }
 
-list.push("🪒 "+shave(day.value));
+list.push("Barbering: "+shave(day.value));
 
 if(hair(week.value,day.value)){
-list.push("💇‍♀️ Hårvask");
+list.push("Hårvask");
 list.push(products[8]);
 }
 
@@ -251,7 +244,7 @@ list.push(products[0],products[1]);
 if(day.value==="Torsdag"){
 list.push(products[6]);
 }else{
-list.push(!peel ? products[3] : "Recovery");
+list.push(!peel?products[3]:"Recovery");
 }
 
 list.push(products[2],products[4]);
@@ -262,21 +255,24 @@ renderHistory();
 renderProducts();
 }
 
-// RENDER
 function render(list,k){
-let div=routine;
-div.innerHTML=`<div class="card"></div>`;
-let card=div.firstChild;
+
+routine.innerHTML=`<div class="card"></div>`;
+let card=routine.firstChild;
 
 list.forEach(item=>{
 let done=tracker[k].includes(item);
 
 let el=document.createElement("div");
 el.className="item "+(done?"done":"");
-el.innerText=item;
+
+el.innerHTML=`
+<span>${item}</span>
+<div class="check"></div>
+`;
 
 el.onclick=()=>{
-if(tracker[k].includes(item)){
+if(done){
 tracker[k]=tracker[k].filter(i=>i!==item);
 }else{
 tracker[k].push(item);
@@ -289,7 +285,6 @@ card.appendChild(el);
 });
 }
 
-// HISTORY
 function renderHistory(){
 history.innerHTML="";
 for(let k in tracker){
@@ -300,14 +295,12 @@ history.appendChild(el);
 }
 }
 
-// CLEAR
 function clearHistory(){
 tracker={};
 localStorage.removeItem("tracker");
 renderHistory();
 }
 
-// PRODUCTS
 function renderProducts(){
 productsDiv.innerHTML="";
 products.forEach(p=>{
@@ -318,7 +311,6 @@ productsDiv.appendChild(el);
 });
 }
 
-// INIT
 renderProducts();
 renderHistory();
 
