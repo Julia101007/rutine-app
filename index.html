@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<title>Hud & Hår Rutine</title>
+<style>
+body {
+    font-family: Arial;
+    background: #f6f6f6;
+    padding: 20px;
+}
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+}
+h2 {
+    margin-top: 20px;
+}
+button {
+    margin: 5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: black;
+    color: white;
+    cursor: pointer;
+}
+input {
+    padding: 8px;
+    margin: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>✨ Din Rutine</h1>
+
+<!-- Velg dag -->
+<h2>Velg dag</h2>
+<select id="week">
+<option value="1">Uke 1</option>
+<option value="2">Uke 2</option>
+</select>
+
+<select id="day">
+<option>Mandag</option>
+<option>Tirsdag</option>
+<option>Onsdag</option>
+<option>Torsdag</option>
+<option>Fredag</option>
+<option>Lørdag</option>
+<option>Søndag</option>
+</select>
+
+<select id="time">
+<option>Morgen</option>
+<option>Kveld</option>
+</select>
+
+<button onclick="showRoutine()">Vis rutine</button>
+
+---
+
+<h2>📋 Rutine</h2>
+<div id="routine"></div>
+
+---
+
+<h2>➕ Legg til produkt</h2>
+<input id="newProduct" placeholder="Produktnavn">
+<button onclick="addProduct()">Legg til</button>
+
+---
+
+<h2>📦 Alle produkter</h2>
+<ul id="productList"></ul>
+
+</div>
+
+<script>
+
+// BASE PRODUKTER
+let products = JSON.parse(localStorage.getItem("products")) || [
+"Koreansk oljerens",
+"Mild vannrens",
+"BOJ Ginseng Essence",
+"d’Alba Mist",
+"Vitamin C",
+"Laneige Serum",
+"Paula’s Choice Cream",
+"Byoma Serum",
+"Round Lab Cream",
+"Kérastase Oil",
+"Gisou Oil",
+"Delícia Body Butter"
+];
+
+// RUTINE LOGIKK (forenklet smart system)
+function getRoutine(week, day, time) {
+
+let routine = [];
+
+// MORGEN
+if(time === "Morgen") {
+    routine = [
+        "Rens",
+        "Toner",
+        "Mist",
+        "Vitamin C",
+        "Serum",
+        "Øyekrem",
+        "Fuktighetskrem",
+        "Lepper"
+    ];
+}
+
+// KVELD
+if(time === "Kveld") {
+
+    routine.push("Dusj");
+    routine.push("Barbering");
+
+    // SKRUBB
+    if(day === "Torsdag") {
+        routine.push("Body scrub");
+        routine.push("Body oil");
+    } else {
+        routine.push("Body cream");
+    }
+
+    // HÅRVASK
+    if(week == 1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)) {
+        routine.push("Hårvask");
+    }
+
+    if(week == 2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) {
+        routine.push("Hårvask");
+    }
+
+    routine.push("Rens");
+    routine.push("Toner");
+
+    if(day === "Torsdag" && week == 1) {
+        routine.push("Peel");
+    }
+
+    routine.push("Serum");
+    routine.push("Øyekrem");
+    routine.push("Fuktighetskrem");
+    routine.push("Lepper");
+}
+
+return routine;
+}
+
+// VIS RUTINE
+function showRoutine() {
+let week = document.getElementById("week").value;
+let day = document.getElementById("day").value;
+let time = document.getElementById("time").value;
+
+let routine = getRoutine(week, day, time);
+
+document.getElementById("routine").innerHTML =
+routine.map(step => "• " + step).join("<br>");
+}
+
+// LEGG TIL PRODUKT
+function addProduct() {
+let input = document.getElementById("newProduct").value;
+
+if(input) {
+    products.push(input);
+    localStorage.setItem("products", JSON.stringify(products));
+    renderProducts();
+}
+}
+
+// VIS PRODUKTER
+function renderProducts() {
+let list = document.getElementById("productList");
+list.innerHTML = "";
+
+products.forEach((p, index) => {
+    let li = document.createElement("li");
+    li.innerHTML = p + 
+    ` <button onclick="removeProduct(${index})">X</button>`;
+    list.appendChild(li);
+});
+}
+
+// FJERN PRODUKT
+function removeProduct(index) {
+products.splice(index, 1);
+localStorage.setItem("products", JSON.stringify(products));
+renderProducts();
+}
+
+renderProducts();
+
+</script>
+
+</body>
+</html>
