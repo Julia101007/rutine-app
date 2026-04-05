@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App</title>
+<title>Rutine App V5</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
@@ -18,7 +18,7 @@ input { padding:8px; margin:5px; }
 
 <div class="container">
 
-<h1>✨ Rutine App</h1>
+<h1>✨ Rutine App V5</h1>
 
 <select id="week">
 <option value="1">Uke 1</option>
@@ -41,38 +41,41 @@ input { padding:8px; margin:5px; }
 </select>
 
 <button onclick="generate()">Vis rutine</button>
-<button onclick="travel()">✈️ Ferieliste</button>
 
 <div id="routine"></div>
 
-<h2>📦 Alle produkter</h2>
+<h2>📦 Produkter</h2>
 <ul id="productList"></ul>
 
-<input id="newProduct" placeholder="Legg til produkt">
-<button onclick="addProduct()">+</button>
+<input id="name" placeholder="Produktnavn">
+<input id="type" placeholder="Type (rens, toner...)">
+<button onclick="addProduct()">Legg til</button>
 
 </div>
 
 <script>
 
-// PRODUKTLISTE
+// PRODUKTER MED TYPE (VIKTIG!)
 let products = JSON.parse(localStorage.getItem("products")) || [
-"Koreansk oljerens",
-"Mild vannrens",
-"BOJ Ginseng Essence",
-"d’Alba Mist",
-"Medik8 Vitamin C",
-"Laneige Serum",
-"Byoma Serum",
-"Round Lab Cream",
-"Paula’s Choice Cream",
-"Kérastase Hair Oil",
-"Gisou Hair Oil",
-"Sam McKnight Oil",
-"Tree Hut Scrub",
-"ExfoliKate",
-"Sol de Janeiro Body Butter"
+{name:"Koreansk oljerens", type:"cleanser"},
+{name:"Mild vannrens", type:"cleanser"},
+{name:"BOJ Ginseng", type:"toner"},
+{name:"d’Alba Mist", type:"mist"},
+{name:"Medik8 C", type:"vitc"},
+{name:"Laneige Serum", type:"serum"},
+{name:"Byoma Serum", type:"night"},
+{name:"Round Lab Cream", type:"cream"},
+{name:"Paula’s Choice", type:"daycream"},
+{name:"Kérastase Oil", type:"hair"},
+{name:"Tree Hut Scrub", type:"scrub"},
+{name:"ExfoliKate", type:"peel"},
+{name:"Body Butter", type:"body"}
 ];
+
+// HENT PRODUKT ETTER TYPE
+function get(type){
+return products.filter(p=>p.type===type).map(p=>p.name);
+}
 
 // BARBERING
 function shave(day){
@@ -108,13 +111,12 @@ if(time==="Morgen"){
 html += `
 <div class="section">
 <h3>🌞 Morgen</h3>
-• ${products[0]}<br>
-• ${products[1]}<br>
-• ${products[2]}<br>
-• ${products[3]}<br>
-• ${products[4]}<br>
-• ${products[5]}<br>
-• ${products[8]}
+${get("cleanser").join("<br>")}
+<br>${get("toner")}
+<br>${get("mist")}
+<br>${get("vitc")}
+<br>${get("serum")}
+<br>${get("daycream")}
 </div>
 `;
 }
@@ -126,7 +128,7 @@ html += `
 <div class="section">
 <h3>🚿 Dusj</h3>
 • Dusj + kroppsvask<br>
-${day==="Torsdag" ? "• "+products[12]+"<br>• Body oil" : "• "+products[14]}
+${day==="Torsdag" ? "• "+get("scrub")+"<br>• Body oil" : "• "+get("body")}
 </div>
 `;
 
@@ -142,7 +144,7 @@ html += `
 <div class="section">
 <h3>💇‍♀️ Hår</h3>
 • Hårvask<br>
-• ${products[9]}
+• ${get("hair")}
 </div>
 `;
 }
@@ -150,12 +152,11 @@ html += `
 html += `
 <div class="section">
 <h3>🧼 Skincare</h3>
-• ${products[0]}<br>
-• ${products[1]}<br>
-${(day==="Torsdag" && week==1) ? "• "+products[13]+"<br>" : ""}
-• ${products[2]}<br>
-• ${products[6]}<br>
-• ${products[7]}
+${get("cleanser").join("<br>")}
+<br>${(day==="Torsdag" && week==1) ? get("peel") : ""}
+<br>${get("toner")}
+<br>${get("night")}
+<br>${get("cream")}
 </div>
 `;
 }
@@ -163,50 +164,34 @@ ${(day==="Torsdag" && week==1) ? "• "+products[13]+"<br>" : ""}
 document.getElementById("routine").innerHTML = html;
 }
 
-// PRODUKTER UI
-function renderProducts(){
+// ADD
+function addProduct(){
+let name = document.getElementById("name").value;
+let type = document.getElementById("type").value;
+
+products.push({name, type});
+localStorage.setItem("products", JSON.stringify(products));
+render();
+}
+
+// RENDER
+function render(){
 let list = document.getElementById("productList");
 list.innerHTML = "";
 
-products.forEach((p, i)=>{
-list.innerHTML += `
-<li>${p} <button onclick="remove(${i})">X</button></li>
-`;
+products.forEach((p,i)=>{
+list.innerHTML += `<li>${p.name} (${p.type}) <button onclick="remove(${i})">X</button></li>`;
 });
-}
-
-// ADD
-function addProduct(){
-let val = document.getElementById("newProduct").value;
-if(val){
-products.push(val);
-localStorage.setItem("products", JSON.stringify(products));
-renderProducts();
-}
 }
 
 // REMOVE
 function remove(i){
 products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
-renderProducts();
+render();
 }
 
-// TRAVEL
-function travel(){
-document.getElementById("routine").innerHTML = `
-<div class="section">
-<h3>✈️ Ferieliste</h3>
-• ${products[0]}<br>
-• ${products[2]}<br>
-• ${products[4]}<br>
-• ${products[5]}<br>
-• ${products[7]}
-</div>
-`;
-}
-
-renderProducts();
+render();
 
 </script>
 
