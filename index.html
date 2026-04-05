@@ -2,15 +2,16 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V11</title>
+<title>Smart Rutine App V12</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
-.container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:12px; }
-.section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
-.item { cursor:pointer; padding:6px; }
+.container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:16px; }
+.section { margin-top:15px; padding:12px; background:#fafafa; border-radius:12px; }
+.item { cursor:pointer; padding:8px; border-radius:8px; }
+.item:hover { background:#eee; }
 .done { text-decoration: line-through; color:gray; }
-button { margin:5px; padding:8px; border:none; border-radius:8px; }
+button { margin:5px; padding:10px; border:none; border-radius:10px; }
 .black { background:black; color:white; }
 .red { background:#e74c3c; color:white; }
 </style>
@@ -51,12 +52,12 @@ button { margin:5px; padding:8px; border:none; border-radius:8px; }
 <option>Akne</option>
 </select>
 
-<button class="black" onclick="generate()">Vis rutine</button>
+<button class="black" onclick="generate()">Vis smart rutine</button>
 
 <div id="routine"></div>
 
 <h2>📊 Historikk</h2>
-<button class="red" onclick="clearHistory()">🧹 Tøm historikk</button>
+<button class="red" onclick="clearHistory()">🧹 Tøm ALL historikk</button>
 <div id="history"></div>
 
 <h2>📦 Alle produkter</h2>
@@ -76,7 +77,8 @@ let products = [
 "Tree Hut Scrub",
 "ExfoliKate",
 "Sol de Janeiro Body Butter",
-"Kérastase Oil"
+"Kérastase Oil",
+"Medik8 Vitamin C"
 ];
 
 // TRACKER
@@ -102,14 +104,14 @@ return {
 }[day];
 }
 
-// HÅRVASK
+// HÅR
 function hair(week, day){
 if(week==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)) return true;
 if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) return true;
 return false;
 }
 
-// SJEKK I GÅR
+// SJEKK GÅRSDAG
 function usedPeelYesterday(){
 let keys = Object.keys(tracker);
 let last = keys[keys.length - 1];
@@ -138,7 +140,7 @@ list.push(products[1]);
 list.push(products[2]);
 
 if(!usedPeel && skin !== "Sensitiv"){
-list.push("Vitamin C");
+list.push(products[9]); // Vitamin C
 }
 
 list.push(products[3]);
@@ -148,6 +150,7 @@ list.push(products[4]);
 // KVELD
 if(time==="Kveld"){
 
+// DUSJ
 list.push("Dusj + kroppsvask");
 
 if(day==="Torsdag"){
@@ -157,18 +160,21 @@ list.push("Body oil");
 list.push(products[7]);
 }
 
+// BARBERING
 list.push("Barbering: " + shave(day));
 
+// HÅR
 if(hair(week, day)){
 list.push("Hårvask");
 list.push(products[8]);
 }
 
+// SKINCARE
 list.push(products[0]);
 list.push(products[1]);
 
 if(day==="Torsdag"){
-list.push(products[6]);
+list.push(products[6]); // peel
 }else{
 if(!usedPeel && skin !== "Sensitiv"){
 list.push(products[3]);
@@ -223,6 +229,11 @@ generate();
 function renderHistory(){
 let div = document.getElementById("history");
 div.innerHTML = "";
+
+if(Object.keys(tracker).length === 0){
+div.innerHTML = "<i>Ingen historikk enda</i>";
+return;
+}
 
 Object.keys(tracker).forEach(day => {
 div.innerHTML += `
