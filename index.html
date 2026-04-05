@@ -6,9 +6,10 @@
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
-.container { max-width:800px; margin:auto; background:white; padding:20px; border-radius:12px; }
+.container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:12px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
-h3 { margin-bottom:5px; }
+button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
+input { padding:8px; margin:5px; }
 </style>
 
 </head>
@@ -40,31 +41,40 @@ h3 { margin-bottom:5px; }
 </select>
 
 <button onclick="generate()">Vis rutine</button>
+<button onclick="travel()">✈️ Ferieliste</button>
 
 <div id="routine"></div>
+
+<h2>📦 Alle produkter</h2>
+<ul id="productList"></ul>
+
+<input id="newProduct" placeholder="Legg til produkt">
+<button onclick="addProduct()">+</button>
 
 </div>
 
 <script>
 
-// PRODUKTER
-let p = {
-cleanser:"Koreansk oljerens",
-water:"Mild vannrens",
-toner:"BOJ Ginseng",
-mist:"d’Alba",
-vitc:"Medik8 C",
-serum:"Laneige Serum",
-night:"Byoma Serum",
-cream:"Round Lab Cream",
-daycream:"Paula’s Choice",
-hairoil:"Kerastase Oil",
-body:"Delicia Body Butter",
-scrub:"Tree Hut Scrub",
-peel:"ExfoliKate"
-};
+// PRODUKTLISTE
+let products = JSON.parse(localStorage.getItem("products")) || [
+"Koreansk oljerens",
+"Mild vannrens",
+"BOJ Ginseng Essence",
+"d’Alba Mist",
+"Medik8 Vitamin C",
+"Laneige Serum",
+"Byoma Serum",
+"Round Lab Cream",
+"Paula’s Choice Cream",
+"Kérastase Hair Oil",
+"Gisou Hair Oil",
+"Sam McKnight Oil",
+"Tree Hut Scrub",
+"ExfoliKate",
+"Sol de Janeiro Body Butter"
+];
 
-// BARBERING (TYDELIG!)
+// BARBERING
 function shave(day){
 return {
 "Mandag":"Armhuler + legger",
@@ -98,13 +108,13 @@ if(time==="Morgen"){
 html += `
 <div class="section">
 <h3>🌞 Morgen</h3>
-• ${p.cleanser}<br>
-• ${p.water}<br>
-• ${p.toner}<br>
-• ${p.mist}<br>
-• ${p.vitc}<br>
-• ${p.serum}<br>
-• ${p.daycream}
+• ${products[0]}<br>
+• ${products[1]}<br>
+• ${products[2]}<br>
+• ${products[3]}<br>
+• ${products[4]}<br>
+• ${products[5]}<br>
+• ${products[8]}
 </div>
 `;
 }
@@ -112,16 +122,14 @@ html += `
 // KVELD
 if(time==="Kveld"){
 
-// DUSJ
 html += `
 <div class="section">
 <h3>🚿 Dusj</h3>
 • Dusj + kroppsvask<br>
-${day==="Torsdag" ? "• Skrubb → "+p.scrub+"<br>• Body oil" : "• Body cream → "+p.body}
+${day==="Torsdag" ? "• "+products[12]+"<br>• Body oil" : "• "+products[14]}
 </div>
 `;
 
-// BARBERING (EGEN BOKS)
 html += `
 <div class="section">
 <h3>🪒 Barbering</h3>
@@ -129,33 +137,76 @@ html += `
 </div>
 `;
 
-// HÅR
 if(hair(week, day)){
 html += `
 <div class="section">
 <h3>💇‍♀️ Hår</h3>
 • Hårvask<br>
-• ${p.hairoil}
+• ${products[9]}
 </div>
 `;
 }
 
-// SKINCARE
 html += `
 <div class="section">
 <h3>🧼 Skincare</h3>
-• ${p.cleanser}<br>
-• ${p.water}<br>
-${(day==="Torsdag" && week==1) ? "• "+p.peel+"<br>" : ""}
-• ${p.toner}<br>
-• ${p.night}<br>
-• ${p.cream}
+• ${products[0]}<br>
+• ${products[1]}<br>
+${(day==="Torsdag" && week==1) ? "• "+products[13]+"<br>" : ""}
+• ${products[2]}<br>
+• ${products[6]}<br>
+• ${products[7]}
 </div>
 `;
 }
 
 document.getElementById("routine").innerHTML = html;
 }
+
+// PRODUKTER UI
+function renderProducts(){
+let list = document.getElementById("productList");
+list.innerHTML = "";
+
+products.forEach((p, i)=>{
+list.innerHTML += `
+<li>${p} <button onclick="remove(${i})">X</button></li>
+`;
+});
+}
+
+// ADD
+function addProduct(){
+let val = document.getElementById("newProduct").value;
+if(val){
+products.push(val);
+localStorage.setItem("products", JSON.stringify(products));
+renderProducts();
+}
+}
+
+// REMOVE
+function remove(i){
+products.splice(i,1);
+localStorage.setItem("products", JSON.stringify(products));
+renderProducts();
+}
+
+// TRAVEL
+function travel(){
+document.getElementById("routine").innerHTML = `
+<div class="section">
+<h3>✈️ Ferieliste</h3>
+• ${products[0]}<br>
+• ${products[2]}<br>
+• ${products[4]}<br>
+• ${products[5]}<br>
+• ${products[7]}
+</div>
+`;
+}
+
+renderProducts();
 
 </script>
 
