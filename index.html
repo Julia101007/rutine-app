@@ -2,16 +2,15 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Smart Rutine App V12</title>
+<title>Smart Rutine App</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:16px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:12px; }
-.item { cursor:pointer; padding:8px; border-radius:8px; }
-.item:hover { background:#eee; }
+.item { padding:8px; cursor:pointer; }
 .done { text-decoration: line-through; color:gray; }
-button { margin:5px; padding:10px; border:none; border-radius:10px; }
+button { padding:10px; margin:5px; border:none; border-radius:10px; }
 .black { background:black; color:white; }
 .red { background:#e74c3c; color:white; }
 </style>
@@ -52,16 +51,17 @@ button { margin:5px; padding:10px; border:none; border-radius:10px; }
 <option>Akne</option>
 </select>
 
-<button class="black" onclick="generate()">Vis smart rutine</button>
+<br>
+<button class="black" onclick="generate()">Vis rutine</button>
 
 <div id="routine"></div>
 
 <h2>📊 Historikk</h2>
-<button class="red" onclick="clearHistory()">🧹 Tøm ALL historikk</button>
+<button class="red" onclick="clearHistory()">🧹 Tøm historikk</button>
 <div id="history"></div>
 
 <h2>📦 Alle produkter</h2>
-<ul id="products"></ul>
+<ul id="productList"></ul>
 
 </div>
 
@@ -81,7 +81,7 @@ let products = [
 "Medik8 Vitamin C"
 ];
 
-// TRACKER
+// STORAGE
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
@@ -111,11 +111,11 @@ if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) return true;
 return false;
 }
 
-// SJEKK GÅRSDAG
+// SJEKK PEEL I GÅR
 function usedPeelYesterday(){
 let keys = Object.keys(tracker);
+if(keys.length === 0) return false;
 let last = keys[keys.length - 1];
-if(!last) return false;
 return tracker[last].includes("ExfoliKate");
 }
 
@@ -130,70 +130,62 @@ let skin = document.getElementById("skin").value;
 let key = getKey();
 if(!tracker[key]) tracker[key] = [];
 
-let list = [];
 let usedPeel = usedPeelYesterday();
+let list = [];
 
 // MORGEN
-if(time==="Morgen"){
-list.push(products[0]);
-list.push(products[1]);
-list.push(products[2]);
-
-if(!usedPeel && skin !== "Sensitiv"){
-list.push(products[9]); // Vitamin C
-}
-
-list.push(products[3]);
-list.push(products[4]);
+if(time === "Morgen"){
+list = [
+products[0],
+products[1],
+products[2],
+(!usedPeel && skin !== "Sensitiv") ? products[9] : null,
+products[3],
+products[4]
+].filter(Boolean);
 }
 
 // KVELD
-if(time==="Kveld"){
+if(time === "Kveld"){
 
-// DUSJ
 list.push("Dusj + kroppsvask");
 
-if(day==="Torsdag"){
+if(day === "Torsdag"){
 list.push(products[5]);
 list.push("Body oil");
-}else{
+} else {
 list.push(products[7]);
 }
 
-// BARBERING
 list.push("Barbering: " + shave(day));
 
-// HÅR
 if(hair(week, day)){
 list.push("Hårvask");
 list.push(products[8]);
 }
 
-// SKINCARE
-list.push(products[0]);
-list.push(products[1]);
+list.push(products[0], products[1]);
 
-if(day==="Torsdag"){
-list.push(products[6]); // peel
-}else{
+if(day === "Torsdag"){
+list.push(products[6]);
+} else {
 if(!usedPeel && skin !== "Sensitiv"){
 list.push(products[3]);
-}else{
+} else {
 list.push("Recovery (ingen aktive)");
 }
 }
 
-list.push(products[2]);
-list.push(products[4]);
+list.push(products[2], products[4]);
 }
 
-render(list, key);
+renderRoutine(list, key);
 renderHistory();
 renderProducts();
 }
 
-// RENDER CHECKLIST
-function render(list, key){
+// RENDER ROUTINE
+function renderRoutine(list, key){
 let div = document.getElementById("routine");
 div.innerHTML = "";
 
@@ -201,11 +193,14 @@ list.forEach(item => {
 
 let done = tracker[key].includes(item);
 
-div.innerHTML += `
-<div class="item ${done?'done':''}" onclick="toggle('${item}')">
-✔ ${item}
-</div>
-`;
+let el = document.createElement("div");
+el.className = "item " + (done ? "done" : "");
+el.innerText = "✔ " + item;
+
+el.onclick = () => toggle(item);
+
+div.appendChild(el);
+
 });
 }
 
@@ -217,7 +212,7 @@ if(!tracker[key]) tracker[key] = [];
 
 if(tracker[key].includes(item)){
 tracker[key] = tracker[key].filter(i => i !== item);
-}else{
+} else {
 tracker[key].push(item);
 }
 
@@ -231,20 +226,20 @@ let div = document.getElementById("history");
 div.innerHTML = "";
 
 if(Object.keys(tracker).length === 0){
-div.innerHTML = "<i>Ingen historikk enda</i>";
+div.innerHTML = "Ingen historikk enda";
 return;
 }
 
-Object.keys(tracker).forEach(day => {
-div.innerHTML += `
-<div class="section">
-<b>${day}</b><br>
-${tracker[day].join("<br>")}
-</div>`;
-});
+for(let key in tracker){
+let block = document.createElement("div");
+block.className = "section";
+
+block.innerHTML = "<b>" + key + "</b><br>" + tracker[key].join("<br>");
+div.appendChild(block);
+}
 }
 
-// TØM HISTORIKK
+// TØM
 function clearHistory(){
 if(confirm("Slette all historikk?")){
 tracker = {};
@@ -256,11 +251,13 @@ document.getElementById("routine").innerHTML = "";
 
 // PRODUKTER
 function renderProducts(){
-let ul = document.getElementById("products");
+let ul = document.getElementById("productList");
 ul.innerHTML = "";
 
-products.forEach(p=>{
-ul.innerHTML += `<li>${p}</li>`;
+products.forEach(p => {
+let li = document.createElement("li");
+li.innerText = p;
+ul.appendChild(li);
 });
 }
 
