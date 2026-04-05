@@ -2,15 +2,17 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Rutine App V6</title>
+<title>Rutine App V7</title>
 
 <style>
 body { font-family: Arial; background:#f6f6f6; padding:20px; }
 .container { max-width:900px; margin:auto; background:white; padding:20px; border-radius:12px; }
 .section { margin-top:15px; padding:12px; background:#fafafa; border-radius:10px; }
+.item { cursor:pointer; padding:5px; }
+.done { text-decoration: line-through; color:gray; }
 button { margin:5px; padding:8px; border:none; border-radius:8px; background:black; color:white; }
-input { padding:8px; margin:5px; }
 </style>
+
 </head>
 
 <body>
@@ -43,37 +45,35 @@ input { padding:8px; margin:5px; }
 
 <div id="routine"></div>
 
-<h2>📦 Produkter</h2>
-<ul id="productList"></ul>
-
-<input id="name" placeholder="Produktnavn">
-<input id="type" placeholder="Type (cleanser, toner...)">
-<button onclick="addProduct()">Legg til</button>
+<h2>📊 Historikk</h2>
+<div id="history"></div>
 
 </div>
 
 <script>
 
-// PRODUKTER MED TYPE
-let products = JSON.parse(localStorage.getItem("products")) || [
-{name:"Koreansk oljerens", type:"cleanser"},
-{name:"Mild vannrens", type:"cleanser"},
-{name:"BOJ Ginseng", type:"toner"},
-{name:"d’Alba Mist", type:"mist"},
-{name:"Medik8 C", type:"vitc"},
-{name:"Laneige Serum", type:"serum"},
-{name:"Byoma Serum", type:"night"},
-{name:"Round Lab Cream", type:"cream"},
-{name:"Paula’s Choice", type:"daycream"},
-{name:"Kérastase Oil", type:"hair"},
-{name:"Tree Hut Scrub", type:"scrub"},
-{name:"ExfoliKate", type:"peel"},
-{name:"Sol de Janeiro Body Butter", type:"body"}
+// PRODUKTER
+let products = [
+"Koreansk oljerens",
+"Mild vannrens",
+"BOJ Ginseng",
+"Byoma Serum",
+"Round Lab Cream",
+"Tree Hut Scrub",
+"ExfoliKate",
+"Sol de Janeiro Body Butter",
+"Kérastase Oil"
 ];
 
-// HENT PRODUKT
-function get(type){
-return products.filter(p=>p.type===type).map(p=>p.name).join(", ") || "—";
+// TRACKER STORAGE
+let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
+
+// KEY PER DAG
+function getKey(){
+let w = document.getElementById("week").value;
+let d = document.getElementById("day").value;
+let t = document.getElementById("time").value;
+return w+"-"+d+"-"+t;
 }
 
 // BARBERING
@@ -89,7 +89,7 @@ return {
 }[day];
 }
 
-// HÅRVASK
+// HÅR
 function hair(week, day){
 if(week==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(day)) return true;
 if(week==2 && ["Tirsdag","Torsdag","Lørdag"].includes(day)) return true;
@@ -103,97 +103,101 @@ let week = document.getElementById("week").value;
 let day = document.getElementById("day").value;
 let time = document.getElementById("time").value;
 
-let html = "";
+let key = getKey();
+if(!tracker[key]) tracker[key] = [];
+
+let list = [];
 
 // MORGEN
 if(time==="Morgen"){
-html += `
-<div class="section">
-<h3>🌞 Morgen</h3>
-• ${get("cleanser")}<br>
-• ${get("toner")}<br>
-• ${get("mist")}<br>
-• ${get("vitc")}<br>
-• ${get("serum")}<br>
-• ${get("daycream")}
-</div>
-`;
+list = [
+products[0],
+products[1],
+products[2],
+products[3],
+products[4]
+];
 }
 
 // KVELD
 if(time==="Kveld"){
 
-// DUSJ
-html += `
-<div class="section">
-<h3>🚿 Dusj</h3>
-• Dusj + kroppsvask<br>
-${day==="Torsdag" ? "• Skrubb → "+get("scrub")+"<br>• Body oil" : "• Body cream → "+get("body")}
-</div>
-`;
+list.push("Dusj + kroppsvask");
 
-// BARBERING
-html += `
-<div class="section">
-<h3>🪒 Barbering</h3>
-• ${shave(day)}
-</div>
-`;
+if(day==="Torsdag"){
+list.push(products[5]);
+list.push("Body oil");
+}else{
+list.push(products[7]);
+}
 
-// HÅR
+list.push("Barbering: "+shave(day));
+
 if(hair(week, day)){
-html += `
-<div class="section">
-<h3>💇‍♀️ Hår</h3>
-• Hårvask<br>
-• ${get("hair")}
-</div>
-`;
+list.push("Hårvask");
+list.push(products[8]);
 }
 
-// SKINCARE
-html += `
-<div class="section">
-<h3>🧼 Skincare</h3>
-• ${get("cleanser")}<br>
-${(day==="Torsdag" && week==1) ? "• Peel → "+get("peel")+"<br>" : ""}
-• ${get("toner")}<br>
-• ${get("night")}<br>
-• ${get("cream")}
-</div>
-`;
+list.push(products[0]);
+list.push(products[1]);
+
+if(day==="Torsdag" && week==1){
+list.push(products[6]);
 }
 
-document.getElementById("routine").innerHTML = html;
+list.push(products[2]);
+list.push(products[3]);
+list.push(products[4]);
 }
 
-// ADD
-function addProduct(){
-let name = document.getElementById("name").value;
-let type = document.getElementById("type").value;
-
-products.push({name, type});
-localStorage.setItem("products", JSON.stringify(products));
-render();
-}
-
-// REMOVE
-function remove(i){
-products.splice(i,1);
-localStorage.setItem("products", JSON.stringify(products));
-render();
+render(list, key);
+renderHistory();
 }
 
 // RENDER
-function render(){
-let list = document.getElementById("productList");
-list.innerHTML = "";
-products.forEach((p,i)=>{
-list.innerHTML += `<li>${p.name} (${p.type}) <button onclick="remove(${i})">X</button></li>`;
+function render(list, key){
+let div = document.getElementById("routine");
+div.innerHTML = "";
+
+list.forEach(item => {
+
+let done = tracker[key].includes(item);
+
+div.innerHTML += `
+<div class="item ${done?'done':''}" onclick="toggle('${item}')">
+✔ ${item}
+</div>
+`;
 });
 }
 
-render();
+// TOGGLE
+function toggle(item){
+let key = getKey();
+
+if(!tracker[key]) tracker[key] = [];
+
+if(tracker[key].includes(item)){
+tracker[key] = tracker[key].filter(i => i !== item);
+}else{
+tracker[key].push(item);
+}
+
+localStorage.setItem("tracker", JSON.stringify(tracker));
+generate();
+}
+
+// HISTORY
+function renderHistory(){
+let div = document.getElementById("history");
+div.innerHTML = "";
+
+Object.keys(tracker).forEach(day => {
+div.innerHTML += `<div class="section"><b>${day}</b><br>${tracker[day].join("<br>")}</div>`;
+});
+}
+
+renderHistory();
 
 </script>
 
