@@ -5,40 +5,15 @@
 <title>Glow Routine</title>
 
 <style>
-body {
-font-family: Arial;
-background: #f9fafb;
-padding:20px;
-}
-
-.container {
-max-width:400px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:20px;
-}
-
-.item {
-padding:10px;
-margin:5px 0;
-background:#f3f4f6;
-border-radius:10px;
-cursor:pointer;
-}
-
-.done {
-text-decoration:line-through;
-opacity:0.5;
-}
-
-.card {
-margin-top:20px;
-padding:15px;
-background:#f9fafb;
-border-radius:15px;
-}
+body { font-family: Arial; background:#f9fafb; padding:20px; }
+.container { max-width:400px; margin:auto; background:white; padding:20px; border-radius:20px; }
+.item { padding:10px; margin:5px 0; background:#f3f4f6; border-radius:10px; cursor:pointer; }
+.done { text-decoration:line-through; opacity:0.5; }
+.card { margin-top:20px; padding:15px; background:#f9fafb; border-radius:15px; }
+input, select, button { margin:5px; padding:8px; border-radius:10px; }
+.product-row { display:flex; justify-content:space-between; }
 </style>
+
 </head>
 
 <body>
@@ -67,6 +42,13 @@ border-radius:15px;
 <option>Kveld</option>
 </select>
 
+<select id="skin">
+<option>Normal</option>
+<option>Sensitiv</option>
+<option>Tørr</option>
+<option>Akne</option>
+</select>
+
 <button onclick="generate()">Vis rutine</button>
 
 <div id="routine"></div>
@@ -79,30 +61,39 @@ border-radius:15px;
 
 <div class="card">
 <h3>🧴 Produkter</h3>
+
+<input id="name" placeholder="Produktnavn">
+<select id="type">
+<option value="cleanser">Rens</option>
+<option value="serum">Serum</option>
+<option value="cream">Krem</option>
+<option value="active">Aktiv</option>
+</select>
+
+<button onclick="addProduct()">Legg til</button>
+
 <div id="products"></div>
+
 </div>
 
 </div>
 
 <script>
 
-// DATA
-const products = [
-"Koreansk oljerens",
-"Mild vannrens",
-"BOJ Ginseng",
-"Byoma Serum",
-"Round Lab Cream"
+// PRODUKTER (med type)
+let products = JSON.parse(localStorage.getItem("products")) || [
+{name:"Koreansk oljerens", type:"cleanser"},
+{name:"Byoma Serum", type:"serum"},
+{name:"Round Lab Cream", type:"cream"},
+{name:"Vitamin C", type:"active"}
 ];
 
-// STORAGE
+// TRACKER
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
 function getKey(){
-return document.getElementById("week").value + "-" +
-document.getElementById("day").value + "-" +
-document.getElementById("time").value;
+return week.value + "-" + day.value + "-" + time.value;
 }
 
 // GENERATE
@@ -111,37 +102,47 @@ function generate(){
 let key = getKey();
 if(!tracker[key]) tracker[key] = [];
 
+let skin = document.getElementById("skin").value;
+
 let list = [];
 
-if(document.getElementById("time").value === "Morgen"){
-list = [...products];
-} else {
-list = ["Dusj", "Barbering", ...products];
+// HENT PRODUKTER PER TYPE
+let cleanser = products.filter(p=>p.type==="cleanser").map(p=>p.name);
+let serum = products.filter(p=>p.type==="serum").map(p=>p.name);
+let cream = products.filter(p=>p.type==="cream").map(p=>p.name);
+let active = products.filter(p=>p.type==="active").map(p=>p.name);
+
+// LOGIKK
+list.push(...cleanser);
+
+if(skin !== "Sensitiv"){
+list.push(...active);
 }
+
+list.push(...serum);
+list.push(...cream);
 
 renderRoutine(list, key);
 renderHistory();
 }
 
-// RENDER ROUTINE
+// RENDER
 function renderRoutine(list, key){
 
-const div = document.getElementById("routine");
+let div = document.getElementById("routine");
 div.innerHTML = "";
 
 list.forEach(item => {
 
-const el = document.createElement("div");
-
 let done = tracker[key].includes(item);
 
+let el = document.createElement("div");
 el.className = "item " + (done ? "done" : "");
 el.innerText = item;
 
 el.onclick = () => toggle(item);
 
 div.appendChild(el);
-
 });
 }
 
@@ -152,34 +153,24 @@ let key = getKey();
 
 if(tracker[key].includes(item)){
 tracker[key] = tracker[key].filter(i => i !== item);
-} else {
+}else{
 tracker[key].push(item);
 }
 
 localStorage.setItem("tracker", JSON.stringify(tracker));
-
 generate();
 }
 
-// HISTORY (GARANTERT FUNKER)
+// HISTORY
 function renderHistory(){
 
-const div = document.getElementById("history");
+let div = document.getElementById("history");
 div.innerHTML = "";
 
-const keys = Object.keys(tracker);
+Object.keys(tracker).forEach(k => {
 
-if(keys.length === 0){
-div.innerText = "Ingen historikk";
-return;
-}
-
-keys.forEach(k => {
-
-const el = document.createElement("div");
-
-el.innerText = k + " → " + tracker[k].join(", ");
-
+let el = document.createElement("div");
+el.innerText = k + ": " + tracker[k].join(", ");
 div.appendChild(el);
 
 });
@@ -192,18 +183,42 @@ localStorage.removeItem("tracker");
 renderHistory();
 }
 
-// PRODUCTS (GARANTERT FUNKER)
+// ADD
+function addProduct(){
+
+let name = document.getElementById("name").value;
+let type = document.getElementById("type").value;
+
+products.push({name, type});
+localStorage.setItem("products", JSON.stringify(products));
+
+renderProducts();
+}
+
+// REMOVE
+function removeProduct(index){
+products.splice(index,1);
+localStorage.setItem("products", JSON.stringify(products));
+renderProducts();
+}
+
+// RENDER PRODUCTS
 function renderProducts(){
 
-const div = document.getElementById("products");
+let div = document.getElementById("products");
 div.innerHTML = "";
 
-products.forEach(p => {
+products.forEach((p,i)=>{
 
-const el = document.createElement("div");
-el.innerText = p;
+let row = document.createElement("div");
+row.className = "product-row";
 
-div.appendChild(el);
+row.innerHTML = `
+<span>${p.name} (${p.type})</span>
+<button onclick="removeProduct(${i})">❌</button>
+`;
+
+div.appendChild(row);
 
 });
 }
