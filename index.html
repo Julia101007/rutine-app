@@ -5,22 +5,62 @@
 <title>Glow Routine</title>
 
 <style>
-body { font-family: Arial; background:#f9fafb; padding:20px; }
-.container { max-width:400px; margin:auto; background:white; padding:20px; border-radius:20px; }
+body {
+font-family: -apple-system, Arial;
+background:#f6f6f6;
+padding:20px;
+}
 
-.controls { display:flex; flex-wrap:wrap; gap:5px; }
+.container {
+max-width:420px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:20px;
+}
 
-.item { padding:10px; margin:5px 0; background:#f3f4f6; border-radius:10px; cursor:pointer; }
-.done { text-decoration:line-through; opacity:0.5; }
+.controls {
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+margin-bottom:15px;
+}
 
-.card { margin-top:20px; padding:15px; background:#f9fafb; border-radius:15px; }
+select, button, input {
+padding:10px;
+border-radius:12px;
+border:1px solid #ccc;
+}
 
-.product-row { display:flex; justify-content:space-between; margin:5px 0; }
+button {
+background:black;
+color:white;
+}
 
-input, select, button {
-padding:8px;
-margin:5px;
-border-radius:10px;
+.item {
+padding:12px;
+margin:6px 0;
+background:#f1f1f1;
+border-radius:12px;
+cursor:pointer;
+}
+
+.done {
+opacity:0.4;
+text-decoration:line-through;
+}
+
+.card {
+margin-top:20px;
+padding:15px;
+background:#fafafa;
+border-radius:15px;
+}
+
+.product-row {
+display:flex;
+justify-content:space-between;
+margin:6px 0;
 }
 </style>
 
@@ -70,8 +110,9 @@ border-radius:10px;
 <div class="card">
 <h3>🧴 Produkter</h3>
 
-<input id="name" placeholder="Skriv produktnavn...">
+<input id="name" placeholder="Skriv produkt...">
 <button onclick="addProduct()">Legg til</button>
+<button onclick="resetProducts()">Reset</button>
 
 <div id="products"></div>
 </div>
@@ -86,42 +127,36 @@ border-radius:10px;
 
 <script>
 
-// AUTO DETECT
+// AUTO TYPE
 function detectType(name){
 name = name.toLowerCase();
 
-if(name.includes("cleanser") || name.includes("rens")) return "cleanser";
+if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
 if(name.includes("toner") || name.includes("essence")) return "toner";
 if(name.includes("serum")) return "serum";
 if(name.includes("cream") || name.includes("krem")) return "cream";
-if(name.includes("oil")) return "oil";
 if(name.includes("acid") || name.includes("peel")) return "active";
 
 return "serum";
 }
 
-// DEFAULT PRODUKTER (DINE)
-let defaultProducts = [
-
+// DINE PRODUKTER
+const defaultProducts = [
 {name:"Koreansk oljerens", type:"cleanser"},
 {name:"Mild vannrens", type:"cleanser"},
-
 {name:"BOJ Ginseng Essence", type:"toner"},
-
 {name:"Byoma Serum", type:"serum"},
-
 {name:"Round Lab Cream", type:"cream"},
 {name:"Delicia Body Butter", type:"cream"},
-
 {name:"Vitamin C", type:"active"},
 {name:"ExfoliKate", type:"active"},
-
 {name:"Kerastase Oil", type:"oil"}
-
 ];
 
-// LOAD
-let products = JSON.parse(localStorage.getItem("products")) || defaultProducts;
+// LOAD (FIXET)
+let saved = JSON.parse(localStorage.getItem("products"));
+let products = (saved && saved.length > 0) ? saved : defaultProducts;
+
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
 // KEY
@@ -151,10 +186,10 @@ return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
 // GENERATE
 function generate(){
 
-let k = getKey();
-if(!tracker[k]) tracker[k] = [];
+let key = getKey();
+if(!tracker[key]) tracker[key] = [];
 
-let skin = skinSelect.value;
+let skinType = skin.value;
 
 // SORT
 let cleanser = products.filter(p=>p.type==="cleanser");
@@ -171,7 +206,7 @@ if(time.value==="Morgen"){
 list.push(...cleanser.map(p=>p.name));
 list.push(...toner.map(p=>p.name));
 
-if(skin !== "Sensitiv"){
+if(skinType !== "Sensitiv"){
 list.push(...active.map(p=>p.name));
 }
 
@@ -183,16 +218,15 @@ list.push(...cream.map(p=>p.name));
 if(time.value==="Kveld"){
 
 list.push("🚿 Dusj");
-
 list.push("🪒 " + shave(day.value));
 
 if(hair(week.value, day.value)){
-list.push("💇‍♀️ Hårvask");
+list.push("💇‍♀️ Hårvask + Kerastase Oil");
 }
 
 list.push(...cleanser.map(p=>p.name));
 
-if(skin !== "Sensitiv"){
+if(skinType !== "Sensitiv"){
 list.push(...active.map(p=>p.name));
 }
 
@@ -200,17 +234,17 @@ list.push(...serum.map(p=>p.name));
 list.push(...cream.map(p=>p.name));
 }
 
-render(list, k);
+render(list, key);
 renderHistory();
 }
 
 // RENDER
-function render(list, k){
+function render(list, key){
 
 routine.innerHTML = "";
 
 list.forEach(item=>{
-let done = tracker[k].includes(item);
+let done = tracker[key].includes(item);
 
 let el = document.createElement("div");
 el.className = "item " + (done ? "done" : "");
@@ -225,12 +259,12 @@ routine.appendChild(el);
 // TOGGLE
 function toggle(item){
 
-let k = getKey();
+let key = getKey();
 
-if(tracker[k].includes(item)){
-tracker[k] = tracker[k].filter(i=>i!==item);
+if(tracker[key].includes(item)){
+tracker[key] = tracker[key].filter(i=>i!==item);
 }else{
-tracker[k].push(item);
+tracker[key].push(item);
 }
 
 localStorage.setItem("tracker", JSON.stringify(tracker));
@@ -240,7 +274,9 @@ generate();
 // ADD
 function addProduct(){
 
-let name = document.getElementById("name").value.trim();
+let input = document.getElementById("name");
+let name = input.value.trim();
+
 if(!name) return;
 
 let type = detectType(name);
@@ -248,7 +284,7 @@ let type = detectType(name);
 products.push({name, type});
 localStorage.setItem("products", JSON.stringify(products));
 
-document.getElementById("name").value = "";
+input.value = "";
 
 renderProducts();
 generate();
@@ -260,6 +296,12 @@ products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
 renderProducts();
 generate();
+}
+
+// RESET (FIX BUG)
+function resetProducts(){
+localStorage.removeItem("products");
+location.reload();
 }
 
 // PRODUCTS
