@@ -2,92 +2,28 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Glow Routine</title>
+<title>AI Glow Routine</title>
 
 <style>
-body {
-font-family: -apple-system, Arial;
-background:#f6f6f6;
-padding:20px;
-}
+body { font-family: Arial; background:#f6f6f6; padding:20px; }
+.container { max-width:420px; margin:auto; background:white; padding:20px; border-radius:20px; }
 
-.container {
-max-width:420px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:20px;
-}
+.item { padding:10px; margin:5px 0; background:#eee; border-radius:10px; cursor:pointer; }
+.done { opacity:0.4; text-decoration:line-through; }
 
-.controls {
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-margin-bottom:15px;
-}
+.card { margin-top:20px; padding:15px; background:#fafafa; border-radius:15px; }
 
-select, button, input {
-padding:10px;
-border-radius:12px;
-border:1px solid #ccc;
-}
+.product-row { display:flex; justify-content:space-between; }
 
-button {
-background:black;
-color:white;
-}
-
-.item {
-padding:12px;
-margin:6px 0;
-background:#f1f1f1;
-border-radius:12px;
-cursor:pointer;
-}
-
-.done {
-opacity:0.4;
-text-decoration:line-through;
-}
-
-.card {
-margin-top:20px;
-padding:15px;
-background:#fafafa;
-border-radius:15px;
-}
-
-.product-row {
-display:flex;
-justify-content:space-between;
-margin:6px 0;
-}
+button, input, select { padding:10px; margin:5px; border-radius:10px; }
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<h2>✨ Glow Routine</h2>
-
-<div class="controls">
-
-<select id="week">
-<option value="1">Uke 1</option>
-<option value="2">Uke 2</option>
-</select>
-
-<select id="day">
-<option>Mandag</option>
-<option>Tirsdag</option>
-<option>Onsdag</option>
-<option>Torsdag</option>
-<option>Fredag</option>
-<option>Lørdag</option>
-<option>Søndag</option>
-</select>
+<h2>✨ AI Glow Routine</h2>
 
 <select id="time">
 <option>Morgen</option>
@@ -103,8 +39,6 @@ margin:6px 0;
 
 <button onclick="generate()">Vis rutine</button>
 
-</div>
-
 <div id="routine"></div>
 
 <div class="card">
@@ -112,228 +46,44 @@ margin:6px 0;
 
 <input id="name" placeholder="Skriv produkt...">
 <button onclick="addProduct()">Legg til</button>
-<button onclick="resetProducts()">Reset</button>
 
 <div id="products"></div>
-</div>
-
-<div class="card">
-<h3>📊 Historikk</h3>
-<button onclick="clearHistory()">Tøm</button>
-<div id="history"></div>
 </div>
 
 </div>
 
 <script>
 
-// ===== TYPE =====
-function detectType(name){
-name = name.toLowerCase();
+let products = [];
+let tracker = {};
 
-if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
-if(name.includes("toner") || name.includes("essence")) return "toner";
-if(name.includes("serum")) return "serum";
-if(name.includes("cream") || name.includes("krem")) return "cream";
-if(name.includes("oil")) return "oil";
-if(name.includes("acid") || name.includes("vitamin")) return "active";
-
-return "serum";
-}
-
-// ===== CATEGORY (FIXET 🔥) =====
-function getCategory(name){
-name = name.toLowerCase();
-
-// BODY
-if(name.includes("body") || name.includes("bum bum") || name.includes("butter")){
-return "body";
-}
-
-// FACE CREAM
-if(name.includes("cream") || name.includes("krem")){
-return "faceCream";
-}
-
-// SERUM
-if(name.includes("serum")) return "serum";
-
-// CLEANSER
-if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
-
-// TONER
-if(name.includes("toner") || name.includes("essence")) return "toner";
-
-// ACTIVE (kan være flere)
-if(name.includes("acid") || name.includes("vitamin")){
-return "active";
-}
-
-return "other";
-}
-
-// ===== DEFAULT PRODUKTER =====
-const defaultProducts = [
-{name:"Koreansk oljerens", type:"cleanser"},
-{name:"Mild vannrens", type:"cleanser"},
-{name:"BOJ Ginseng Essence", type:"toner"},
-{name:"Byoma Serum", type:"serum"},
-{name:"Round Lab Cream", type:"cream"},
-{name:"Delicia Body Butter", type:"cream"},
-{name:"Vitamin C", type:"active"},
-{name:"ExfoliKate", type:"active"},
-{name:"Kerastase Oil", type:"oil"}
-];
-
-// ===== LOAD =====
-let saved = JSON.parse(localStorage.getItem("products"));
-let products = (saved && saved.length > 0) ? saved : defaultProducts;
-
-let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
-
-// ===== ELEMENTS =====
-const routineDiv = document.getElementById("routine");
-const productsDiv = document.getElementById("products");
-const historyDiv = document.getElementById("history");
-
-// ===== KEY =====
-function getKey(){
-return week.value + "-" + day.value + "-" + time.value;
-}
-
-// ===== BARBERING =====
-function shave(d){
-return {
-"Mandag":"Armhuler + legger",
-"Tirsdag":"Lår + armer",
-"Onsdag":"Bikinilinje + intim",
-"Torsdag":"Lår + armer",
-"Fredag":"Armhuler + legger",
-"Lørdag":"Bikinilinje + intim",
-"Søndag":"Armhuler + legger"
-}[d];
-}
-
-// ===== HÅR =====
-function hair(w,d){
-return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
-(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
-}
-
-// ===== GENERATE =====
-function generate(){
-
-let key = getKey();
-if(!tracker[key]) tracker[key] = [];
-
-let skinType = skin.value;
-
-// SPLIT FACE / BODY
-let cleanser = products.filter(p=>getCategory(p.name)==="cleanser");
-let toner = products.filter(p=>getCategory(p.name)==="toner");
-let serum = products.filter(p=>getCategory(p.name)==="serum");
-let faceCream = products.filter(p=>getCategory(p.name)==="faceCream");
-let body = products.filter(p=>getCategory(p.name)==="body");
-let active = products.filter(p=>getCategory(p.name)==="active");
-
-let list = [];
-
-// MORGEN
-if(time.value==="Morgen"){
-
-list.push(...cleanser.map(p=>p.name));
-list.push(...toner.map(p=>p.name));
-
-if(skinType !== "Sensitiv"){
-list.push(...active.map(p=>p.name));
-}
-
-list.push(...serum.map(p=>p.name));
-list.push(...faceCream.map(p=>p.name));
-}
-
-// KVELD
-if(time.value==="Kveld"){
-
-list.push("🚿 Dusj");
-list.push("🪒 " + shave(day.value));
-
-// BODY I DUSJ
-list.push(...body.map(p=>p.name));
-
-if(hair(week.value, day.value)){
-list.push("💇‍♀️ Hårvask + Kerastase Oil");
-}
-
-list.push(...cleanser.map(p=>p.name));
-
-if(skinType !== "Sensitiv"){
-list.push(...active.map(p=>p.name));
-}
-
-list.push(...serum.map(p=>p.name));
-list.push(...faceCream.map(p=>p.name));
-}
-
-renderRoutine(list, key);
-renderHistory();
-}
-
-// ===== RENDER =====
-function renderRoutine(list, key){
-
-routineDiv.innerHTML = "";
-
-list.forEach(item=>{
-let done = tracker[key].includes(item);
-
-let el = document.createElement("div");
-el.className = "item " + (done ? "done" : "");
-el.innerText = item;
-
-el.onclick = ()=>toggle(item);
-
-routineDiv.appendChild(el);
-});
-}
-
-// ===== TOGGLE =====
-function toggle(item){
-
-let key = getKey();
-
-if(tracker[key].includes(item)){
-tracker[key] = tracker[key].filter(i=>i!==item);
-}else{
-tracker[key].push(item);
-}
-
-localStorage.setItem("tracker", JSON.stringify(tracker));
-generate();
-}
-
-// ===== ADD PRODUCT (SMART 🔥) =====
-function addProduct(){
+async function addProduct(){
 
 let input = document.getElementById("name");
 let name = input.value.trim();
 if(!name) return;
 
-let type = detectType(name);
-let category = getCategory(name);
-
-// fjern lignende (ikke active)
-products = products.filter(p=>{
-let existingCat = getCategory(p.name);
-
-if(category === "active") return true;
-
-return existingCat !== category;
+// 🔥 KALL AI SERVER
+let res = await fetch("http://localhost:3000/analyze", {
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body: JSON.stringify({name})
 });
 
-products.push({name, type});
+let result = await res.json();
 
-localStorage.setItem("products", JSON.stringify(products));
+// 🔥 ERSTATT SAMME KATEGORI
+products = products.filter(p=>{
+if(result.category === "active") return true;
+return p.category !== result.category;
+});
+
+// legg til
+products.push({
+name,
+type: result.type,
+category: result.category
+});
 
 input.value = "";
 
@@ -341,60 +91,83 @@ renderProducts();
 generate();
 }
 
-// ===== REMOVE =====
-function removeProduct(i){
-products.splice(i,1);
-localStorage.setItem("products", JSON.stringify(products));
-renderProducts();
-generate();
+function generate(){
+
+let skin = document.getElementById("skin").value;
+let time = document.getElementById("time").value;
+
+let list = [];
+
+// MORGEN
+if(time === "Morgen"){
+
+list.push(...products.filter(p=>p.category==="cleanser").map(p=>p.name));
+list.push(...products.filter(p=>p.category==="toner").map(p=>p.name));
+
+if(skin !== "Sensitiv"){
+list.push(...products.filter(p=>p.category==="active").map(p=>p.name));
 }
 
-// ===== RESET =====
-function resetProducts(){
-localStorage.removeItem("products");
-location.reload();
+list.push(...products.filter(p=>p.category==="serum").map(p=>p.name));
+list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
 }
 
-// ===== PRODUCTS =====
+// KVELD
+if(time === "Kveld"){
+
+list.push("🚿 Dusj");
+
+list.push(...products.filter(p=>p.category==="body").map(p=>p.name));
+
+list.push(...products.filter(p=>p.category==="cleanser").map(p=>p.name));
+
+if(skin !== "Sensitiv"){
+list.push(...products.filter(p=>p.category==="active").map(p=>p.name));
+}
+
+list.push(...products.filter(p=>p.category==="serum").map(p=>p.name));
+list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
+}
+
+render(list);
+}
+
+function render(list){
+
+let div = document.getElementById("routine");
+div.innerHTML = "";
+
+list.forEach(item=>{
+let el = document.createElement("div");
+el.className="item";
+el.innerText=item;
+div.appendChild(el);
+});
+}
+
 function renderProducts(){
 
-productsDiv.innerHTML = "";
+let div = document.getElementById("products");
+div.innerHTML="";
 
 products.forEach((p,i)=>{
-let row = document.createElement("div");
-row.className = "product-row";
+let row=document.createElement("div");
+row.className="product-row";
 
-row.innerHTML = `
+row.innerHTML=`
 <span>${p.name}</span>
 <button onclick="removeProduct(${i})">❌</button>
 `;
 
-productsDiv.appendChild(row);
+div.appendChild(row);
 });
 }
 
-// ===== HISTORY =====
-function renderHistory(){
-
-historyDiv.innerHTML = "";
-
-Object.keys(tracker).forEach(k=>{
-let el = document.createElement("div");
-el.innerText = k + ": " + tracker[k].join(", ");
-historyDiv.appendChild(el);
-});
-}
-
-// ===== CLEAR =====
-function clearHistory(){
-tracker = {};
-localStorage.removeItem("tracker");
-renderHistory();
-}
-
-// ===== INIT =====
+function removeProduct(i){
+products.splice(i,1);
 renderProducts();
-renderHistory();
+generate();
+}
 
 </script>
 
