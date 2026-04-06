@@ -35,8 +35,10 @@ input, button { padding:8px; margin:5px; border-radius:10px; }
 
 <div class="card">
 <h3>🧴 Produkter</h3>
-<input id="name" placeholder="Skriv produkt...">
+
+<input id="name" placeholder="Skriv produktnavn...">
 <button onclick="addProduct()">Legg til</button>
+
 <div id="products"></div>
 </div>
 
@@ -61,7 +63,7 @@ if(name.includes("cream") || name.includes("moistur")) return "cream";
 if(name.includes("oil")) return "oil";
 if(name.includes("acid") || name.includes("peel")) return "active";
 
-return "serum"; // default
+return "serum";
 }
 
 // STORAGE
@@ -81,7 +83,7 @@ if(!tracker[k]) tracker[k] = [];
 
 let skin = document.getElementById("skin").value;
 
-// SORT PRODUCTS
+// SORTER PRODUKTER
 let cleanser = products.filter(p=>p.type==="cleanser");
 let toner = products.filter(p=>p.type==="toner");
 let serum = products.filter(p=>p.type==="serum");
@@ -90,7 +92,7 @@ let active = products.filter(p=>p.type==="active");
 
 let list = [];
 
-// ROUTINE
+// RUTINE
 list.push(...cleanser.map(p=>p.name));
 list.push(...toner.map(p=>p.name));
 
@@ -101,12 +103,12 @@ list.push(...active.map(p=>p.name));
 list.push(...serum.map(p=>p.name));
 list.push(...cream.map(p=>p.name));
 
-render(list, k);
+renderRoutine(list, k);
 renderHistory();
 }
 
-// RENDER
-function render(list, k){
+// RENDER ROUTINE
+function renderRoutine(list, k){
 
 let div = document.getElementById("routine");
 div.innerHTML = "";
@@ -140,18 +142,26 @@ localStorage.setItem("tracker", JSON.stringify(tracker));
 generate();
 }
 
-// ADD PRODUCT (SMART)
+// ADD PRODUCT (FIXET)
 function addProduct(){
 
-let name = document.getElementById("name").value;
+let input = document.getElementById("name");
+let name = input.value.trim();
+
+if(!name) return;
 
 let type = detectType(name);
 
+// legg til
 products.push({name, type});
 
+// lagre
 localStorage.setItem("products", JSON.stringify(products));
 
-renderProducts();
+// 🔥 VIKTIG FIX:
+input.value = "";        // tøm input
+renderProducts();        // oppdater liste
+generate();              // oppdater rutine
 }
 
 // REMOVE
@@ -159,9 +169,10 @@ function removeProduct(i){
 products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
 renderProducts();
+generate();
 }
 
-// RENDER PRODUCTS
+// RENDER PRODUCTS (FIXET)
 function renderProducts(){
 
 let div = document.getElementById("products");
