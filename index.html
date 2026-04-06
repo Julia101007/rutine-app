@@ -2,16 +2,26 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Smart Beauty</title>
+<title>Glow Routine</title>
 
 <style>
 body { font-family: Arial; background:#f9fafb; padding:20px; }
 .container { max-width:400px; margin:auto; background:white; padding:20px; border-radius:20px; }
+
+.controls { display:flex; flex-wrap:wrap; gap:5px; }
+
 .item { padding:10px; margin:5px 0; background:#f3f4f6; border-radius:10px; cursor:pointer; }
 .done { text-decoration:line-through; opacity:0.5; }
+
 .card { margin-top:20px; padding:15px; background:#f9fafb; border-radius:15px; }
+
 .product-row { display:flex; justify-content:space-between; margin:5px 0; }
-input, button { padding:8px; margin:5px; border-radius:10px; }
+
+input, select, button {
+padding:8px;
+margin:5px;
+border-radius:10px;
+}
 </style>
 
 </head>
@@ -20,7 +30,29 @@ input, button { padding:8px; margin:5px; border-radius:10px; }
 
 <div class="container">
 
-<h2>✨ Smart Beauty Routine</h2>
+<h2>✨ Glow Routine</h2>
+
+<div class="controls">
+
+<select id="week">
+<option value="1">Uke 1</option>
+<option value="2">Uke 2</option>
+</select>
+
+<select id="day">
+<option>Mandag</option>
+<option>Tirsdag</option>
+<option>Onsdag</option>
+<option>Torsdag</option>
+<option>Fredag</option>
+<option>Lørdag</option>
+<option>Søndag</option>
+</select>
+
+<select id="time">
+<option>Morgen</option>
+<option>Kveld</option>
+</select>
 
 <select id="skin">
 <option>Normal</option>
@@ -30,6 +62,8 @@ input, button { padding:8px; margin:5px; border-radius:10px; }
 </select>
 
 <button onclick="generate()">Vis rutine</button>
+
+</div>
 
 <div id="routine"></div>
 
@@ -56,9 +90,9 @@ input, button { padding:8px; margin:5px; border-radius:10px; }
 function detectType(name){
 name = name.toLowerCase();
 
-if(name.includes("cleanser") || name.includes("rens") || name.includes("wash")) return "cleanser";
+if(name.includes("cleanser") || name.includes("rens")) return "cleanser";
 if(name.includes("toner") || name.includes("essence")) return "toner";
-if(name.includes("serum") || name.includes("ampoule")) return "serum";
+if(name.includes("serum")) return "serum";
 if(name.includes("cream") || name.includes("krem")) return "cream";
 if(name.includes("oil")) return "oil";
 if(name.includes("acid") || name.includes("peel")) return "active";
@@ -66,18 +100,56 @@ if(name.includes("acid") || name.includes("peel")) return "active";
 return "serum";
 }
 
-let products = JSON.parse(localStorage.getItem("products")) || [];
+// DEFAULT PRODUKTER (DINE)
+let defaultProducts = [
+{name:"Koreansk oljerens", type:"cleanser"},
+{name:"Mild vannrens", type:"cleanser"},
+{name:"BOJ Ginseng", type:"toner"},
+{name:"Byoma Serum", type:"serum"},
+{name:"Round Lab Cream", type:"cream"},
+{name:"ExfoliKate", type:"active"},
+{name:"Sol de Janeiro Body Butter", type:"cream"},
+{name:"Kérastase Oil", type:"oil"},
+{name:"Vitamin C", type:"active"}
+];
+
+// LOAD
+let products = JSON.parse(localStorage.getItem("products")) || defaultProducts;
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
-function key(){ return "today"; }
+// KEY
+function getKey(){
+return week.value + "-" + day.value + "-" + time.value;
+}
 
+// BARBERING
+function shave(d){
+return {
+"Mandag":"Armhuler + legger",
+"Tirsdag":"Lår + armer",
+"Onsdag":"Bikinilinje + intim",
+"Torsdag":"Lår + armer",
+"Fredag":"Armhuler + legger",
+"Lørdag":"Bikinilinje + intim",
+"Søndag":"Armhuler + legger"
+}[d];
+}
+
+// HÅR
+function hair(w,d){
+return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
+(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
+}
+
+// GENERATE
 function generate(){
 
-let k = key();
+let k = getKey();
 if(!tracker[k]) tracker[k] = [];
 
-let skin = document.getElementById("skin").value;
+let skin = skinSelect.value;
 
+// SORT
 let cleanser = products.filter(p=>p.type==="cleanser");
 let toner = products.filter(p=>p.type==="toner");
 let serum = products.filter(p=>p.type==="serum");
@@ -85,6 +157,9 @@ let cream = products.filter(p=>p.type==="cream");
 let active = products.filter(p=>p.type==="active");
 
 let list = [];
+
+// MORGEN
+if(time.value==="Morgen"){
 
 list.push(...cleanser.map(p=>p.name));
 list.push(...toner.map(p=>p.name));
@@ -95,15 +170,37 @@ list.push(...active.map(p=>p.name));
 
 list.push(...serum.map(p=>p.name));
 list.push(...cream.map(p=>p.name));
+}
+
+// KVELD
+if(time.value==="Kveld"){
+
+list.push("🚿 Dusj");
+
+list.push("🪒 " + shave(day.value));
+
+if(hair(week.value, day.value)){
+list.push("💇‍♀️ Hårvask");
+}
+
+list.push(...cleanser.map(p=>p.name));
+
+if(skin !== "Sensitiv"){
+list.push(...active.map(p=>p.name));
+}
+
+list.push(...serum.map(p=>p.name));
+list.push(...cream.map(p=>p.name));
+}
 
 render(list, k);
 renderHistory();
 }
 
+// RENDER
 function render(list, k){
 
-let div = document.getElementById("routine");
-div.innerHTML = "";
+routine.innerHTML = "";
 
 list.forEach(item=>{
 let done = tracker[k].includes(item);
@@ -114,13 +211,14 @@ el.innerText = item;
 
 el.onclick = ()=>toggle(item);
 
-div.appendChild(el);
+routine.appendChild(el);
 });
 }
 
+// TOGGLE
 function toggle(item){
 
-let k = key();
+let k = getKey();
 
 if(tracker[k].includes(item)){
 tracker[k] = tracker[k].filter(i=>i!==item);
@@ -132,11 +230,10 @@ localStorage.setItem("tracker", JSON.stringify(tracker));
 generate();
 }
 
+// ADD
 function addProduct(){
 
-let input = document.getElementById("name");
-let name = input.value.trim();
-
+let name = document.getElementById("name").value.trim();
 if(!name) return;
 
 let type = detectType(name);
@@ -144,11 +241,13 @@ let type = detectType(name);
 products.push({name, type});
 localStorage.setItem("products", JSON.stringify(products));
 
-input.value = "";
+document.getElementById("name").value = "";
+
 renderProducts();
 generate();
 }
 
+// REMOVE
 function removeProduct(i){
 products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
@@ -156,10 +255,10 @@ renderProducts();
 generate();
 }
 
+// PRODUCTS
 function renderProducts(){
 
-let div = document.getElementById("products");
-div.innerHTML = "";
+productsDiv.innerHTML = "";
 
 products.forEach((p,i)=>{
 let row = document.createElement("div");
@@ -170,28 +269,30 @@ row.innerHTML = `
 <button onclick="removeProduct(${i})">❌</button>
 `;
 
-div.appendChild(row);
+productsDiv.appendChild(row);
 });
 }
 
+// HISTORY
 function renderHistory(){
 
-let div = document.getElementById("history");
-div.innerHTML = "";
+history.innerHTML = "";
 
 Object.keys(tracker).forEach(k=>{
 let el = document.createElement("div");
-el.innerText = tracker[k].join(", ");
-div.appendChild(el);
+el.innerText = k + ": " + tracker[k].join(", ");
+history.appendChild(el);
 });
 }
 
+// CLEAR
 function clearHistory(){
 tracker = {};
 localStorage.removeItem("tracker");
 renderHistory();
 }
 
+// INIT
 renderProducts();
 renderHistory();
 
