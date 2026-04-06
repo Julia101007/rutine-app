@@ -5,18 +5,63 @@
 <title>AI Glow Routine</title>
 
 <style>
-body { font-family: Arial; background:#f6f6f6; padding:20px; }
-.container { max-width:420px; margin:auto; background:white; padding:20px; border-radius:20px; }
+body {
+font-family:-apple-system,Arial;
+background:#f6f6f6;
+padding:20px;
+}
 
-.item { padding:10px; margin:5px 0; background:#eee; border-radius:10px; cursor:pointer; }
-.done { opacity:0.4; text-decoration:line-through; }
+.container {
+max-width:450px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:20px;
+}
 
-.card { margin-top:20px; padding:15px; background:#fafafa; border-radius:15px; }
+.controls {
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+}
 
-.product-row { display:flex; justify-content:space-between; }
+select,button,input {
+padding:10px;
+border-radius:12px;
+border:1px solid #ccc;
+}
 
-button, input, select { padding:10px; margin:5px; border-radius:10px; }
+button {
+background:black;
+color:white;
+}
+
+.item {
+padding:12px;
+margin:6px 0;
+background:#eee;
+border-radius:12px;
+cursor:pointer;
+}
+
+.done {
+opacity:0.4;
+text-decoration:line-through;
+}
+
+.card {
+margin-top:20px;
+padding:15px;
+background:#fafafa;
+border-radius:15px;
+}
+
+.product-row {
+display:flex;
+justify-content:space-between;
+}
 </style>
+
 </head>
 
 <body>
@@ -24,6 +69,23 @@ button, input, select { padding:10px; margin:5px; border-radius:10px; }
 <div class="container">
 
 <h2>✨ AI Glow Routine</h2>
+
+<div class="controls">
+
+<select id="week">
+<option value="1">Uke 1</option>
+<option value="2">Uke 2</option>
+</select>
+
+<select id="day">
+<option>Mandag</option>
+<option>Tirsdag</option>
+<option>Onsdag</option>
+<option>Torsdag</option>
+<option>Fredag</option>
+<option>Lørdag</option>
+<option>Søndag</option>
+</select>
 
 <select id="time">
 <option>Morgen</option>
@@ -39,6 +101,8 @@ button, input, select { padding:10px; margin:5px; border-radius:10px; }
 
 <button onclick="generate()">Vis rutine</button>
 
+</div>
+
 <div id="routine"></div>
 
 <div class="card">
@@ -50,61 +114,76 @@ button, input, select { padding:10px; margin:5px; border-radius:10px; }
 <div id="products"></div>
 </div>
 
+<div class="card">
+<h3>📊 Historikk</h3>
+<button onclick="clearHistory()">Tøm</button>
+<div id="history"></div>
+</div>
+
 </div>
 
 <script>
 
+// ===== STORAGE =====
 let products = [];
-let tracker = {};
+let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
+// ===== AI CALL =====
+async function analyze(name){
+
+let res = await fetch("http://localhost:3000/analyze",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({name})
+});
+
+return await res.json();
+}
+
+// ===== ADD PRODUCT =====
 async function addProduct(){
 
 let input = document.getElementById("name");
 let name = input.value.trim();
 if(!name) return;
 
-// 🔥 KALL AI SERVER
-let res = await fetch("http://localhost:3000/analyze", {
-method:"POST",
-headers:{ "Content-Type":"application/json" },
-body: JSON.stringify({name})
-});
+let result = await analyze(name);
 
-let result = await res.json();
-
-// 🔥 ERSTATT SAMME KATEGORI
+// 🔥 REPLACE SAME CATEGORY
 products = products.filter(p=>{
-if(result.category === "active") return true;
+if(result.category==="active") return true;
 return p.category !== result.category;
 });
 
-// legg til
 products.push({
 name,
 type: result.type,
 category: result.category
 });
 
-input.value = "";
+input.value="";
 
 renderProducts();
 generate();
 }
 
+// ===== GENERATE =====
 function generate(){
 
-let skin = document.getElementById("skin").value;
-let time = document.getElementById("time").value;
+let key = week.value+"-"+day.value+"-"+time.value;
+if(!tracker[key]) tracker[key]=[];
+
+let skinType = skin.value;
 
 let list = [];
 
 // MORGEN
-if(time === "Morgen"){
+if(time.value==="Morgen"){
 
 list.push(...products.filter(p=>p.category==="cleanser").map(p=>p.name));
 list.push(...products.filter(p=>p.category==="toner").map(p=>p.name));
 
-if(skin !== "Sensitiv"){
+if(skinType!=="Sensitiv"){
 list.push(...products.filter(p=>p.category==="active").map(p=>p.name));
 }
 
@@ -113,15 +192,16 @@ list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
 }
 
 // KVELD
-if(time === "Kveld"){
+if(time.value==="Kveld"){
 
 list.push("🚿 Dusj");
+list.push("🪒 Barbering");
 
 list.push(...products.filter(p=>p.category==="body").map(p=>p.name));
 
 list.push(...products.filter(p=>p.category==="cleanser").map(p=>p.name));
 
-if(skin !== "Sensitiv"){
+if(skinType!=="Sensitiv"){
 list.push(...products.filter(p=>p.category==="active").map(p=>p.name));
 }
 
@@ -129,25 +209,43 @@ list.push(...products.filter(p=>p.category==="serum").map(p=>p.name));
 list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
 }
 
-render(list);
+renderRoutine(list,key);
+renderHistory();
 }
 
-function render(list){
+// ===== RENDER =====
+function renderRoutine(list,key){
 
 let div = document.getElementById("routine");
-div.innerHTML = "";
+div.innerHTML="";
 
 list.forEach(item=>{
+
+let done = tracker[key].includes(item);
+
 let el = document.createElement("div");
-el.className="item";
+el.className="item "+(done?"done":"");
 el.innerText=item;
+
+el.onclick=()=>{
+if(done){
+tracker[key]=tracker[key].filter(i=>i!==item);
+}else{
+tracker[key].push(item);
+}
+
+localStorage.setItem("tracker",JSON.stringify(tracker));
+generate();
+};
+
 div.appendChild(el);
 });
 }
 
+// ===== PRODUCTS =====
 function renderProducts(){
 
-let div = document.getElementById("products");
+let div=document.getElementById("products");
 div.innerHTML="";
 
 products.forEach((p,i)=>{
@@ -163,10 +261,31 @@ div.appendChild(row);
 });
 }
 
+// ===== REMOVE =====
 function removeProduct(i){
 products.splice(i,1);
 renderProducts();
 generate();
+}
+
+// ===== HISTORY =====
+function renderHistory(){
+
+let div=document.getElementById("history");
+div.innerHTML="";
+
+Object.keys(tracker).forEach(k=>{
+let el=document.createElement("div");
+el.innerText=k+": "+tracker[k].join(", ");
+div.appendChild(el);
+});
+}
+
+// ===== CLEAR =====
+function clearHistory(){
+tracker={};
+localStorage.removeItem("tracker");
+renderHistory();
 }
 
 </script>
