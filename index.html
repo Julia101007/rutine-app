@@ -127,7 +127,7 @@ margin:6px 0;
 
 <script>
 
-// ===== SMART TYPE =====
+// ===== TYPE =====
 function detectType(name){
 name = name.toLowerCase();
 
@@ -136,21 +136,38 @@ if(name.includes("toner") || name.includes("essence")) return "toner";
 if(name.includes("serum")) return "serum";
 if(name.includes("cream") || name.includes("krem")) return "cream";
 if(name.includes("oil")) return "oil";
-if(name.includes("acid") || name.includes("vitamin") || name.includes("peel")) return "active";
+if(name.includes("acid") || name.includes("vitamin")) return "active";
 
 return "serum";
 }
 
-// ===== SMART CATEGORY (🔥 viktig) =====
+// ===== CATEGORY (FIXET 🔥) =====
 function getCategory(name){
 name = name.toLowerCase();
 
-if(name.includes("bum bum") || name.includes("body")) return "body";
-if(name.includes("cream") || name.includes("krem")) return "faceCream";
+// BODY
+if(name.includes("body") || name.includes("bum bum") || name.includes("butter")){
+return "body";
+}
+
+// FACE CREAM
+if(name.includes("cream") || name.includes("krem")){
+return "faceCream";
+}
+
+// SERUM
 if(name.includes("serum")) return "serum";
+
+// CLEANSER
 if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
+
+// TONER
 if(name.includes("toner") || name.includes("essence")) return "toner";
-if(name.includes("acid") || name.includes("vitamin")) return "active";
+
+// ACTIVE (kan være flere)
+if(name.includes("acid") || name.includes("vitamin")){
+return "active";
+}
 
 return "other";
 }
@@ -174,7 +191,7 @@ let products = (saved && saved.length > 0) ? saved : defaultProducts;
 
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
-// ===== ELEMENTER =====
+// ===== ELEMENTS =====
 const routineDiv = document.getElementById("routine");
 const productsDiv = document.getElementById("products");
 const historyDiv = document.getElementById("history");
@@ -211,12 +228,13 @@ if(!tracker[key]) tracker[key] = [];
 
 let skinType = skin.value;
 
-// sorter produkter
-let cleanser = products.filter(p=>p.type==="cleanser");
-let toner = products.filter(p=>p.type==="toner");
-let serum = products.filter(p=>p.type==="serum");
-let cream = products.filter(p=>p.type==="cream");
-let active = products.filter(p=>p.type==="active");
+// SPLIT FACE / BODY
+let cleanser = products.filter(p=>getCategory(p.name)==="cleanser");
+let toner = products.filter(p=>getCategory(p.name)==="toner");
+let serum = products.filter(p=>getCategory(p.name)==="serum");
+let faceCream = products.filter(p=>getCategory(p.name)==="faceCream");
+let body = products.filter(p=>getCategory(p.name)==="body");
+let active = products.filter(p=>getCategory(p.name)==="active");
 
 let list = [];
 
@@ -231,7 +249,7 @@ list.push(...active.map(p=>p.name));
 }
 
 list.push(...serum.map(p=>p.name));
-list.push(...cream.map(p=>p.name));
+list.push(...faceCream.map(p=>p.name));
 }
 
 // KVELD
@@ -239,6 +257,9 @@ if(time.value==="Kveld"){
 
 list.push("🚿 Dusj");
 list.push("🪒 " + shave(day.value));
+
+// BODY I DUSJ
+list.push(...body.map(p=>p.name));
 
 if(hair(week.value, day.value)){
 list.push("💇‍♀️ Hårvask + Kerastase Oil");
@@ -251,7 +272,7 @@ list.push(...active.map(p=>p.name));
 }
 
 list.push(...serum.map(p=>p.name));
-list.push(...cream.map(p=>p.name));
+list.push(...faceCream.map(p=>p.name));
 }
 
 renderRoutine(list, key);
@@ -291,7 +312,7 @@ localStorage.setItem("tracker", JSON.stringify(tracker));
 generate();
 }
 
-// ===== ADD PRODUCT (🔥 SMART REPLACE) =====
+// ===== ADD PRODUCT (SMART 🔥) =====
 function addProduct(){
 
 let input = document.getElementById("name");
@@ -301,7 +322,7 @@ if(!name) return;
 let type = detectType(name);
 let category = getCategory(name);
 
-// fjern lignende (ikke aktive)
+// fjern lignende (ikke active)
 products = products.filter(p=>{
 let existingCat = getCategory(p.name);
 
