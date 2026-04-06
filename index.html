@@ -127,7 +127,7 @@ margin:6px 0;
 
 <script>
 
-// AUTO TYPE
+// ===== SMART TYPE =====
 function detectType(name){
 name = name.toLowerCase();
 
@@ -135,12 +135,27 @@ if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
 if(name.includes("toner") || name.includes("essence")) return "toner";
 if(name.includes("serum")) return "serum";
 if(name.includes("cream") || name.includes("krem")) return "cream";
-if(name.includes("acid") || name.includes("peel")) return "active";
+if(name.includes("oil")) return "oil";
+if(name.includes("acid") || name.includes("vitamin") || name.includes("peel")) return "active";
 
 return "serum";
 }
 
-// DINE PRODUKTER
+// ===== SMART CATEGORY (🔥 viktig) =====
+function getCategory(name){
+name = name.toLowerCase();
+
+if(name.includes("bum bum") || name.includes("body")) return "body";
+if(name.includes("cream") || name.includes("krem")) return "faceCream";
+if(name.includes("serum")) return "serum";
+if(name.includes("rens") || name.includes("cleanser")) return "cleanser";
+if(name.includes("toner") || name.includes("essence")) return "toner";
+if(name.includes("acid") || name.includes("vitamin")) return "active";
+
+return "other";
+}
+
+// ===== DEFAULT PRODUKTER =====
 const defaultProducts = [
 {name:"Koreansk oljerens", type:"cleanser"},
 {name:"Mild vannrens", type:"cleanser"},
@@ -153,18 +168,23 @@ const defaultProducts = [
 {name:"Kerastase Oil", type:"oil"}
 ];
 
-// LOAD (FIXET)
+// ===== LOAD =====
 let saved = JSON.parse(localStorage.getItem("products"));
 let products = (saved && saved.length > 0) ? saved : defaultProducts;
 
 let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
 
-// KEY
+// ===== ELEMENTER =====
+const routineDiv = document.getElementById("routine");
+const productsDiv = document.getElementById("products");
+const historyDiv = document.getElementById("history");
+
+// ===== KEY =====
 function getKey(){
 return week.value + "-" + day.value + "-" + time.value;
 }
 
-// BARBERING
+// ===== BARBERING =====
 function shave(d){
 return {
 "Mandag":"Armhuler + legger",
@@ -177,13 +197,13 @@ return {
 }[d];
 }
 
-// HÅR
+// ===== HÅR =====
 function hair(w,d){
 return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
 (w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
 }
 
-// GENERATE
+// ===== GENERATE =====
 function generate(){
 
 let key = getKey();
@@ -191,7 +211,7 @@ if(!tracker[key]) tracker[key] = [];
 
 let skinType = skin.value;
 
-// SORT
+// sorter produkter
 let cleanser = products.filter(p=>p.type==="cleanser");
 let toner = products.filter(p=>p.type==="toner");
 let serum = products.filter(p=>p.type==="serum");
@@ -234,14 +254,14 @@ list.push(...serum.map(p=>p.name));
 list.push(...cream.map(p=>p.name));
 }
 
-render(list, key);
+renderRoutine(list, key);
 renderHistory();
 }
 
-// RENDER
-function render(list, key){
+// ===== RENDER =====
+function renderRoutine(list, key){
 
-routine.innerHTML = "";
+routineDiv.innerHTML = "";
 
 list.forEach(item=>{
 let done = tracker[key].includes(item);
@@ -252,11 +272,11 @@ el.innerText = item;
 
 el.onclick = ()=>toggle(item);
 
-routine.appendChild(el);
+routineDiv.appendChild(el);
 });
 }
 
-// TOGGLE
+// ===== TOGGLE =====
 function toggle(item){
 
 let key = getKey();
@@ -271,17 +291,27 @@ localStorage.setItem("tracker", JSON.stringify(tracker));
 generate();
 }
 
-// ADD
+// ===== ADD PRODUCT (🔥 SMART REPLACE) =====
 function addProduct(){
 
 let input = document.getElementById("name");
 let name = input.value.trim();
-
 if(!name) return;
 
 let type = detectType(name);
+let category = getCategory(name);
+
+// fjern lignende (ikke aktive)
+products = products.filter(p=>{
+let existingCat = getCategory(p.name);
+
+if(category === "active") return true;
+
+return existingCat !== category;
+});
 
 products.push({name, type});
+
 localStorage.setItem("products", JSON.stringify(products));
 
 input.value = "";
@@ -290,7 +320,7 @@ renderProducts();
 generate();
 }
 
-// REMOVE
+// ===== REMOVE =====
 function removeProduct(i){
 products.splice(i,1);
 localStorage.setItem("products", JSON.stringify(products));
@@ -298,13 +328,13 @@ renderProducts();
 generate();
 }
 
-// RESET (FIX BUG)
+// ===== RESET =====
 function resetProducts(){
 localStorage.removeItem("products");
 location.reload();
 }
 
-// PRODUCTS
+// ===== PRODUCTS =====
 function renderProducts(){
 
 productsDiv.innerHTML = "";
@@ -322,26 +352,26 @@ productsDiv.appendChild(row);
 });
 }
 
-// HISTORY
+// ===== HISTORY =====
 function renderHistory(){
 
-history.innerHTML = "";
+historyDiv.innerHTML = "";
 
 Object.keys(tracker).forEach(k=>{
 let el = document.createElement("div");
 el.innerText = k + ": " + tracker[k].join(", ");
-history.appendChild(el);
+historyDiv.appendChild(el);
 });
 }
 
-// CLEAR
+// ===== CLEAR =====
 function clearHistory(){
 tracker = {};
 localStorage.removeItem("tracker");
 renderHistory();
 }
 
-// INIT
+// ===== INIT =====
 renderProducts();
 renderHistory();
 
