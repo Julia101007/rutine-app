@@ -2,17 +2,17 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>AI Glow Routine</title>
+<title>Glow Routine</title>
 
 <style>
 body {
-font-family:-apple-system,Arial;
+font-family: -apple-system, Arial;
 background:#f6f6f6;
 padding:20px;
 }
 
 .container {
-max-width:450px;
+max-width:420px;
 margin:auto;
 background:white;
 padding:20px;
@@ -23,9 +23,10 @@ border-radius:20px;
 display:flex;
 flex-wrap:wrap;
 gap:8px;
+margin-bottom:15px;
 }
 
-select,button,input {
+select, button, input {
 padding:10px;
 border-radius:12px;
 border:1px solid #ccc;
@@ -39,7 +40,7 @@ color:white;
 .item {
 padding:12px;
 margin:6px 0;
-background:#eee;
+background:#f1f1f1;
 border-radius:12px;
 cursor:pointer;
 }
@@ -59,6 +60,7 @@ border-radius:15px;
 .product-row {
 display:flex;
 justify-content:space-between;
+margin:6px 0;
 }
 </style>
 
@@ -68,7 +70,7 @@ justify-content:space-between;
 
 <div class="container">
 
-<h2>✨ AI Glow Routine</h2>
+<h2>✨ Glow Routine</h2>
 
 <div class="controls">
 
@@ -110,6 +112,7 @@ justify-content:space-between;
 
 <input id="name" placeholder="Skriv produkt...">
 <button onclick="addProduct()">Legg til</button>
+<button onclick="resetProducts()">Reset</button>
 
 <div id="products"></div>
 </div>
@@ -124,53 +127,97 @@ justify-content:space-between;
 
 <script>
 
-// ===== STORAGE =====
-let products = [];
-let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
+// ===== SMART ANALYSE (ÉN FUNKSJON) =====
+function analyze(name){
 
-// ===== AI CALL =====
-async function analyze(name){
+let n = name.toLowerCase();
 
-let res = await fetch("http://localhost:3000/analyze",{
-method:"POST",
-headers:{ "Content-Type":"application/json"},
-body:JSON.stringify({name})
-});
-
-return await res.json();
+// BODY
+if(n.includes("body") || n.includes("bum bum") || n.includes("butter")){
+return {type:"cream", category:"body"};
 }
 
-// ===== ADD PRODUCT =====
-async function addProduct(){
+// CLEANSER
+if(n.includes("rens") || n.includes("cleanser")){
+return {type:"cleanser", category:"cleanser"};
+}
 
-let input = document.getElementById("name");
-let name = input.value.trim();
-if(!name) return;
+// TONER
+if(n.includes("toner") || n.includes("essence")){
+return {type:"toner", category:"toner"};
+}
 
-let result = await analyze(name);
+// SERUM
+if(n.includes("serum")){
+return {type:"serum", category:"serum"};
+}
 
-// 🔥 REPLACE SAME CATEGORY
-products = products.filter(p=>{
-if(result.category==="active") return true;
-return p.category !== result.category;
-});
+// ACTIVE
+if(n.includes("acid") || n.includes("vitamin") || n.includes("retinol")){
+return {type:"active", category:"active"};
+}
 
-products.push({
-name,
-type: result.type,
-category: result.category
-});
+// FACE CREAM
+if(n.includes("cream") || n.includes("krem")){
+return {type:"cream", category:"faceCream"};
+}
 
-input.value="";
+// OIL
+if(n.includes("oil")){
+return {type:"oil", category:"oil"};
+}
 
-renderProducts();
-generate();
+// fallback
+return {type:"serum", category:"serum"};
+}
+
+// ===== DEFAULT PRODUKTER =====
+const defaultProducts = [
+{name:"Koreansk oljerens", category:"cleanser"},
+{name:"Mild vannrens", category:"cleanser"},
+{name:"BOJ Ginseng Essence", category:"toner"},
+{name:"Byoma Serum", category:"serum"},
+{name:"Round Lab Cream", category:"faceCream"},
+{name:"Delicia Body Butter", category:"body"},
+{name:"Vitamin C", category:"active"},
+{name:"ExfoliKate", category:"active"},
+{name:"Kerastase Oil", category:"oil"}
+];
+
+// ===== LOAD =====
+let saved = JSON.parse(localStorage.getItem("products"));
+let products = (saved && saved.length) ? saved : defaultProducts;
+
+let tracker = JSON.parse(localStorage.getItem("tracker")) || {};
+
+// ===== KEY =====
+function getKey(){
+return week.value + "-" + day.value + "-" + time.value;
+}
+
+// ===== BARBERING =====
+function shave(d){
+return {
+"Mandag":"Armhuler + legger",
+"Tirsdag":"Lår + armer",
+"Onsdag":"Bikinilinje + intim",
+"Torsdag":"Lår + armer",
+"Fredag":"Armhuler + legger",
+"Lørdag":"Bikinilinje + intim",
+"Søndag":"Armhuler + legger"
+}[d];
+}
+
+// ===== HÅR =====
+function hair(w,d){
+return (w==1 && ["Mandag","Onsdag","Fredag","Søndag"].includes(d)) ||
+(w==2 && ["Tirsdag","Torsdag","Lørdag"].includes(d));
 }
 
 // ===== GENERATE =====
 function generate(){
 
-let key = week.value+"-"+day.value+"-"+time.value;
+let key = getKey();
 if(!tracker[key]) tracker[key]=[];
 
 let skinType = skin.value;
@@ -195,9 +242,14 @@ list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
 if(time.value==="Kveld"){
 
 list.push("🚿 Dusj");
-list.push("🪒 Barbering");
+list.push("🪒 " + shave(day.value));
 
+// BODY
 list.push(...products.filter(p=>p.category==="body").map(p=>p.name));
+
+if(hair(week.value, day.value)){
+list.push("💇‍♀️ Hårvask + Kerastase Oil");
+}
 
 list.push(...products.filter(p=>p.category==="cleanser").map(p=>p.name));
 
@@ -209,21 +261,19 @@ list.push(...products.filter(p=>p.category==="serum").map(p=>p.name));
 list.push(...products.filter(p=>p.category==="faceCream").map(p=>p.name));
 }
 
-renderRoutine(list,key);
+render(list,key);
 renderHistory();
 }
 
 // ===== RENDER =====
-function renderRoutine(list,key){
+function render(list,key){
 
-let div = document.getElementById("routine");
-div.innerHTML="";
+routine.innerHTML="";
 
 list.forEach(item=>{
-
 let done = tracker[key].includes(item);
 
-let el = document.createElement("div");
+let el=document.createElement("div");
 el.className="item "+(done?"done":"");
 el.innerText=item;
 
@@ -238,15 +288,57 @@ localStorage.setItem("tracker",JSON.stringify(tracker));
 generate();
 };
 
-div.appendChild(el);
+routine.appendChild(el);
 });
+}
+
+// ===== ADD PRODUCT (SMART REPLACE) =====
+function addProduct(){
+
+let input=document.getElementById("name");
+let name=input.value.trim();
+if(!name) return;
+
+let result = analyze(name);
+
+// fjern samme kategori (unntatt active)
+products = products.filter(p=>{
+if(result.category==="active") return true;
+return p.category !== result.category;
+});
+
+// legg til
+products.push({
+name:name,
+category:result.category
+});
+
+localStorage.setItem("products",JSON.stringify(products));
+
+input.value="";
+
+renderProducts();
+generate();
+}
+
+// ===== REMOVE =====
+function removeProduct(i){
+products.splice(i,1);
+localStorage.setItem("products",JSON.stringify(products));
+renderProducts();
+generate();
+}
+
+// ===== RESET =====
+function resetProducts(){
+localStorage.removeItem("products");
+location.reload();
 }
 
 // ===== PRODUCTS =====
 function renderProducts(){
 
-let div=document.getElementById("products");
-div.innerHTML="";
+productsDiv.innerHTML="";
 
 products.forEach((p,i)=>{
 let row=document.createElement("div");
@@ -257,27 +349,19 @@ row.innerHTML=`
 <button onclick="removeProduct(${i})">❌</button>
 `;
 
-div.appendChild(row);
+productsDiv.appendChild(row);
 });
-}
-
-// ===== REMOVE =====
-function removeProduct(i){
-products.splice(i,1);
-renderProducts();
-generate();
 }
 
 // ===== HISTORY =====
 function renderHistory(){
 
-let div=document.getElementById("history");
-div.innerHTML="";
+history.innerHTML="";
 
 Object.keys(tracker).forEach(k=>{
 let el=document.createElement("div");
 el.innerText=k+": "+tracker[k].join(", ");
-div.appendChild(el);
+history.appendChild(el);
 });
 }
 
@@ -287,6 +371,10 @@ tracker={};
 localStorage.removeItem("tracker");
 renderHistory();
 }
+
+// ===== INIT =====
+renderProducts();
+renderHistory();
 
 </script>
 
